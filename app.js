@@ -45,13 +45,15 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     $("summary").textContent = (next.length === 0 ? "Aucun examen à venir" : next.length + " examen" + (next.length > 1 ? "s" : "") + " à venir")
       + (rows.length ? (unpaid ? " · " + unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : " · tout est payé 🎉") : "")
       + manque(next).map(x => " · " + x).join("");
-    const t = new Date(); t.setDate(t.getDate() + 1);
-    const demain = t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0");
-    const lAuj = rows.filter(r => r.date === today && incomplet(r)), lDemain = rows.filter(r => r.date === demain && incomplet(r));
+    const dateIn = (n) => { const t = new Date(); t.setDate(t.getDate() + n); return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0"); };
+    const bientot = rows.filter(r => r.date >= today && r.date <= dateIn(2) && incomplet(r));
     const ban = $("banner");
-    ban.hidden = !(lAuj.length || lDemain.length);
-    ban.textContent = lAuj.length ? "⚠️ Aujourd'hui, examens à compléter : " + manque(lAuj).join(", ") + "."
-      : "⚠️ Demain, examens à compléter : " + manque(lDemain).join(", ") + ". Pensez à les remplir !";
+    ban.hidden = !bientot.length;
+    if (bientot.length) {
+      const first = bientot.reduce((m, r) => r.date < m ? r.date : m, bientot[0].date);
+      const quand = first === today ? "aujourd'hui" : first === dateIn(1) ? "demain" : "dans 2 jours";
+      ban.textContent = "⚠️ Examens à compléter d'ici 2 jours (le 1er : " + quand + ") : " + manque(bientot).join(", ") + ". Pensez à les remplir !";
+    }
     list.replaceChildren();
     if (view === "month") { renderMonths(list, today); return; }
     const items = view === "next" ? next : past;

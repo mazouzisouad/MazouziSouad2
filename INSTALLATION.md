@@ -63,13 +63,13 @@ Ouvrez l'adresse du site → connectez-vous → menu du navigateur → **« Ajou
   Restrictions d'application : Sites Web → `https://mazouzisouad.github.io/*` et `https://exams-1101c.firebaseapp.com/*`).
 - **Mots de passe** : au moins 12 caractères, différents de vos autres comptes, jamais partagés.
 
-## Rappel la veille à 10h (examens sans nom)
+## Rappel 2 jours avant à 10h (examens à compléter)
 
-Chaque jour vers 10h (heure de Paris), un robot GitHub (`.github/workflows/rappel.yml`) regarde les examens du
-lendemain. S'il y en a sans nom d'élève, il envoie une notification sur le téléphone avec l'appli gratuite **ntfy**.
+Chaque jour vers 10h (heure de Paris), un robot GitHub (`.github/workflows/rappel.yml`) regarde les examens
+qui ont lieu 2 jours plus tard. S'il y en a sans nom d'élève ou sans accompagnateur, il envoie une notification sur le téléphone avec l'appli gratuite **ntfy**.
 Sur le site, un bandeau orange le rappelle aussi.
 
 Réglages (GitHub → Settings → Secrets and variables → Actions → New repository secret) :
 - `ROBOT_EMAIL` / `ROBOT_PASSWORD` : un compte créé pour le robot dans Firebase → Authentication → Utilisateurs.
 - `NTFY_TOPIC` : le nom secret du canal ntfy (à saisir aussi dans l'appli ntfy, bouton « + »).
-Test : GitHub → Actions → « Rappel examens sans nom » → Run workflow.
+Test : GitHub → Actions → « Rappel examens à compléter » → Run workflow.

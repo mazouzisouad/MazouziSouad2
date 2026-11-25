@@ -1,4 +1,4 @@
-// Rappel de la veille : prévient (notification ntfy) s'il y a demain des examens sans nom d'élève ou sans accompagnateur.
+// Rappel deux jours avant : prévient (notification ntfy) s'il y a dans 2 jours des examens sans nom d'élève ou sans accompagnateur.
 // Lancé chaque jour vers 10h (heure de Paris) par GitHub Actions. Aucune donnée d'élève n'est écrite dans les journaux.
 const API_KEY = 'AIzaSyBuPC4GpVpRiOMQT1dZ6P8drNwg1OTcr0c';
 const PROJECT = 'exams-1101c';
@@ -24,8 +24,8 @@ async function main() {
     const voulu = SCHEDULE.startsWith('0 8') ? 2 : 1;
     if (((offset + 24) % 24) !== voulu) { console.log('Pas le bon horaire aujourd\'hui (heure d\'été / d\'hiver), rien à faire.'); return; }
   }
-  const t = parisParts(new Date(now.getTime() + 24 * 3600 * 1000));
-  const demain = `${t.y}-${String(t.m).padStart(2, '0')}-${String(t.d).padStart(2, '0')}`;
+  const t = parisParts(new Date(now.getTime() + 2 * 24 * 3600 * 1000));
+  const cible = `${t.y}-${String(t.m).padStart(2, '0')}-${String(t.d).padStart(2, '0')}`;
 
   const auth = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -36,14 +36,14 @@ async function main() {
 
   const q = await fetch(`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents:runQuery`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
-    body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'dates_examen' }], where: { fieldFilter: { field: { fieldPath: 'date' }, op: 'EQUAL', value: { stringValue: demain } } } } }),
+    body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'dates_examen' }], where: { fieldFilter: { field: { fieldPath: 'date' }, op: 'EQUAL', value: { stringValue: cible } } } } }),
   });
   if (!q.ok) throw new Error('Lecture des examens impossible (' + q.status + ').');
   const docs = (await q.json()).filter((x) => x.document).map((x) => x.document.fields || {});
   const vide = (f, k) => !(f[k] && f[k].stringValue && f[k].stringValue.trim());
   const sansNom = docs.filter((f) => vide(f, 'eleve') || vide(f, 'accompagnateur'));
   const nNom = docs.filter((f) => vide(f, 'eleve')).length, nAcc = docs.filter((f) => vide(f, 'accompagnateur')).length;
-  console.log(`Examens demain : ${docs.length}, à compléter : ${sansNom.length}`);
+  console.log(`Examens dans 2 jours : ${docs.length}, à compléter : ${sansNom.length}`);
 
   const jour = new Date(Date.UTC(t.y, t.m - 1, t.d, 12));
   const quand = `${JOURS[jour.getUTCDay()]} ${t.d} ${MOIS[t.m - 1]}`;
@@ -52,12 +52,12 @@ async function main() {
     const lieux = {};
     sansNom.forEach((f) => { const l = (f.lieu && f.lieu.stringValue) || 'lieu ?'; lieux[l] = (lieux[l] || 0) + 1; });
     const manque = [nNom && `${nNom} sans nom d'élève`, nAcc && `${nAcc} sans accompagnateur`].filter(Boolean).join(', ');
-    titre = `Examens de demain à compléter (${sansNom.length})`;
-    texte = `Demain (${quand}) : ${manque}. Lieux : `
+    titre = `Examens dans 2 jours à compléter (${sansNom.length})`;
+    texte = `Dans 2 jours (${quand}) : ${manque}. Lieux : `
       + Object.entries(lieux).map(([l, n]) => `${n} à ${l}`).join(', ') + '. Touchez pour compléter.';
   } else if (test) {
     titre = 'Rappel des examens : test réussi ✅';
-    texte = `Tout fonctionne. Demain (${quand}) : ${docs.length} examen(s), rien à compléter.`;
+    texte = `Tout fonctionne. Dans 2 jours (${quand}) : ${docs.length} examen(s), rien à compléter.`;
   } else { console.log('Rien à signaler.'); return; }
 
   const r = await fetch(`https://ntfy.sh/${encodeURIComponent(NTFY_TOPIC)}`, {
