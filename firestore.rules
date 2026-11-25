@@ -1,13 +1,35 @@
 rules_version = '2';
 
 // Règles de sécurité du site « Dates d'examen ».
-// Seules les personnes qui ont un compte (créé par vous dans Firebase → Authentication
-// → Utilisateurs) peuvent lire et modifier les examens.
-// L'inscription libre est désactivée (Authentication → Paramètres → Actions des utilisateurs).
+// - Seules les personnes qui ont un compte (créé par la direction dans Firebase →
+//   Authentication → Utilisateurs) peuvent lire et modifier les examens.
+//   L'inscription libre est désactivée (Authentication → Paramètres → Actions des utilisateurs).
+// - Chaque examen est vérifié : uniquement les champs prévus, textes de taille limitée,
+//   date au bon format. Tout le reste de la base est fermé.
 service cloud.firestore {
   match /databases/{database}/documents {
+    function connecte() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'password';
+    }
+    function texte(d, champ, max) {
+      return !(champ in d) || (d[champ] is string && d[champ].size() <= max);
+    }
+    function examenValide(d) {
+      return d.keys().hasOnly(['eleve', 'accompagnateur', 'lieu', 'date', 'commentaire',
+                               'payeW', 'payeB', 'payeS', 'payeWDate', 'payeBDate', 'payeSDate',
+                               'creeLe', 'creePar', 'modifieLe'])
+        && d.eleve is string && d.eleve.size() > 0 && d.eleve.size() <= 80
+        && d.date is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && texte(d, 'accompagnateur', 80) && texte(d, 'lieu', 120)
+        && texte(d, 'commentaire', 300) && texte(d, 'creePar', 120);
+    }
     match /dates_examen/{id} {
-      allow read, write: if request.auth != null;
+      allow read, delete: if connecte();
+      allow create, update: if connecte() && examenValide(request.resource.data);
+    }
+    // Tout le reste : interdit à tout le monde.
+    match /{autre=**} {
+      allow read, write: if false;
     }
   }
 }

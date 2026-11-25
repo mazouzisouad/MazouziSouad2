@@ -1,6 +1,6 @@
 // Service worker : l'appli s'ouvre même sans réseau (installée sur le téléphone).
-const CACHE = 'examens-v3';
-const FILES = ['./', 'index.html', 'icon.svg', 'manifest.webmanifest', 'config.js',
+const CACHE = 'examens-v4';
+const FILES = ['./', 'index.html', 'app.js', 'icon.svg', 'manifest.webmanifest', 'config.js',
   'vendor/firebase/firebase-app-compat.js', 'vendor/firebase/firebase-auth-compat.js', 'vendor/firebase/firebase-firestore-compat.js'];
 
 self.addEventListener('install', (e) => {

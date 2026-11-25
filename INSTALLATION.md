@@ -49,3 +49,16 @@ Ouvrez l'adresse du site → connectez-vous → menu du navigateur → **« Ajou
 
 - **Donner** : créez son compte (Authentication → Utilisateurs → Ajouter un utilisateur).
 - **Retirer** : supprimez ou désactivez son compte (Authentication → Utilisateurs → ⋮).
+
+## Sécurité
+
+- **Connexion obligatoire** : sans compte, on ne voit rien (pas même la liste des examens).
+- **Pas d'inscription libre** : seuls les comptes créés dans Firebase peuvent entrer.
+- **Règles de la base** ([`firestore.rules`](firestore.rules)) : seuls les comptes connectés lisent et modifient ;
+  chaque examen est vérifié (champs prévus, textes de taille limitée) ; tout le reste de la base est fermé.
+- **Le site** : politique de sécurité du contenu (aucun script extérieur autorisé), refuse d'être affiché dans un
+  autre site, non référencé par les moteurs de recherche, les textes saisis ne sont jamais interprétés comme du code.
+- **Se déconnecter** efface aussi les données gardées sur l'appareil.
+- **Clé du site limitée à votre adresse** (Google Cloud → API et services → Identifiants → clé « Browser key » →
+  Restrictions d'application : Sites Web → `https://mazouzisouad.github.io/*` et `https://exams-1101c.firebaseapp.com/*`).
+- **Mots de passe** : au moins 12 caractères, différents de vos autres comptes, jamais partagés.
