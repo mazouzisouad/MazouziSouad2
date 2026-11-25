@@ -1,4 +1,4 @@
-name: Rappel examens sans nom (veille 10h)
+name: Rappel examens à compléter (2 jours avant, 10h)
 
 on:
   schedule:
