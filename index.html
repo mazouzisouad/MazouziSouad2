@@ -119,6 +119,36 @@ html, body { margin: 0 }
 .login h1 { text-align: center; font-size: 28px }
 .login p.sub { text-align: center; color: var(--muted); margin: -6px 0 4px }
 .login input { font: inherit; font-weight: 600; color: var(--fg); background: var(--bg); border: 2px solid var(--line); border-radius: 14px; padding: 12px 14px; width: 100%; min-width: 0 }
+
+.tab { padding: 8px 14px }
+.month { background: var(--card); border: 2px solid var(--line); border-radius: 22px; box-shadow: 0 4px 0 var(--line); padding: 14px 14px 8px; display: grid; gap: 10px }
+.month.current { border-color: var(--primary) }
+.month-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap }
+.month h2 { font-family: var(--f-display); font-size: 22px; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap }
+.month h2 .now { font-family: var(--f-body); font-size: 12px; font-weight: 800; background: var(--primary); color: var(--primary-fg); padding: 2px 10px; border-radius: 99px }
+.month-stats { display: flex; gap: 6px; flex-wrap: wrap }
+.pill { font-size: 13px; font-weight: 800; padding: 3px 10px; border-radius: 99px; background: var(--bg); color: var(--fg) }
+.pill.wait { background: var(--unpaid); color: #fff }
+.pill.ok { background: var(--paid); color: #fff }
+.mrows { display: grid }
+.mrow { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 4px; border-top: 2px solid var(--bg); cursor: pointer; border-radius: 12px }
+.mrow:hover { background: var(--bg) }
+.mrow.past { opacity: .6 }
+.mday { text-align: center; line-height: 1.05; font-variant-numeric: tabular-nums }
+.mday b { display: block; font-family: var(--f-display); font-size: 22px; color: var(--primary) }
+.mday span { font-size: 12px; color: var(--muted); text-transform: uppercase }
+.mmid { min-width: 0 }
+.mname { font-weight: 800; overflow-wrap: anywhere }
+.msub { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 13px; color: var(--muted) }
+.msub > span { display: inline-flex; align-items: center; gap: 5px }
+.msub .avatar { width: 18px; height: 18px; font-size: 10px }
+.mdots { display: flex; gap: 4px }
+.mdot { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; font-size: 14px; border: 2px solid var(--unpaid); color: var(--unpaid) }
+.mdot.paid { background: var(--paid); border-color: var(--paid); color: #fff }
+.past-months { background: var(--card); border: 2px dashed var(--line); border-radius: 22px; padding: 12px 14px; display: grid; gap: 12px }
+.past-months > summary { cursor: pointer; font-weight: 800; color: var(--muted) }
+.past-months[open] { gap: 12px }
+.past-months .month { box-shadow: none; margin-top: 12px }
 </style>
 </head>
 <body>
@@ -154,6 +184,7 @@ html, body { margin: 0 }
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" id="tabNext" aria-selected="true">À venir</button>
       <button class="tab" role="tab" id="tabPast" aria-selected="false">Passés</button>
+      <button class="tab" role="tab" id="tabMonth" aria-selected="false">Par mois</button>
     </div>
   </header>
   <div class="list" id="list"></div>

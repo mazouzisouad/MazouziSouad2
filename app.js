@@ -33,8 +33,9 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const unpaid = rows.reduce((n, r) => n + PAYS.filter(([, f]) => r[f] !== true).length, 0);
     $("summary").textContent = (next.length === 0 ? "Aucun examen à venir" : next.length + " examen" + (next.length > 1 ? "s" : "") + " à venir")
       + (rows.length ? (unpaid ? " · " + unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : " · tout est payé 🎉") : "");
-    const items = view === "next" ? next : past;
     list.replaceChildren();
+    if (view === "month") { renderMonths(list, today); return; }
+    const items = view === "next" ? next : past;
     if (!items.length) {
       const e = el("div", "empty");
       e.append(el("div", "big", view === "next" ? "🚦" : "🏁"));
@@ -43,6 +44,64 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       return;
     }
     items.forEach(r => list.append(card(r, r.date < today)));
+  }
+
+  // ---------- vue « Par mois » ----------
+  const MONTHS_FULL = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+  function renderMonths(list, today) {
+    if (!rows.length) {
+      const e = el("div", "empty"); e.append(el("div", "big", "📅"), el("p", null, "Aucun examen pour l'instant."));
+      list.append(e); return;
+    }
+    const groups = new Map();
+    rows.slice().sort((a, b) => a.date.localeCompare(b.date)).forEach(r => {
+      const k = r.date.slice(0, 7);
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(r);
+    });
+    const curMonth = today.slice(0, 7);
+    const keys = [...groups.keys()];
+    const coming = keys.filter(k => k >= curMonth);
+    const gone = keys.filter(k => k < curMonth).reverse();
+    coming.forEach(k => list.append(monthBox(k, groups.get(k), today, k === curMonth)));
+    if (gone.length) {
+      const d = el("details", "past-months");
+      d.append(el("summary", null, "Mois passés (" + gone.length + ")"));
+      gone.forEach(k => d.append(monthBox(k, groups.get(k), today, false)));
+      list.append(d);
+    }
+  }
+  function monthBox(key, items, today, isCurrent) {
+    const [y, m] = key.split("-").map(Number);
+    const box = el("section", "month" + (isCurrent ? " current" : ""));
+    const head = el("div", "month-head");
+    const title = el("h2", null, MONTHS_FULL[m - 1] + " " + y);
+    if (isCurrent) title.append(el("span", "now", "Ce mois-ci"));
+    const unpaid = items.reduce((n, r) => n + PAYS.filter(([, f]) => r[f] !== true).length, 0);
+    const stats = el("div", "month-stats");
+    stats.append(el("span", "pill", items.length + " examen" + (items.length > 1 ? "s" : "")));
+    stats.append(el("span", "pill " + (unpaid ? "wait" : "ok"), unpaid ? unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : "Tout payé ✓"));
+    head.append(title, stats);
+    box.append(head);
+    const ul = el("div", "mrows");
+    items.forEach(r => {
+      const d = parse(r.date);
+      const row = el("div", "mrow" + (r.date < today ? " past" : ""));
+      const day = el("div", "mday"); day.append(el("b", null, String(d.getDate())), el("span", null, DAYS[d.getDay()]));
+      const mid = el("div", "mmid");
+      mid.append(el("div", "mname", r.eleve));
+      const sub = el("div", "msub");
+      if (r.accompagnateur) { const a = el("span"); a.append(avatar(r.accompagnateur), r.accompagnateur); sub.append(a); }
+      if (r.lieu) sub.append(el("span", null, "📍 " + r.lieu));
+      mid.append(sub);
+      const dots = el("div", "mdots");
+      PAYS.forEach(([lbl, f]) => { const t = el("span", "mdot" + (r[f] === true ? " paid" : ""), lbl); t.title = "Paiement " + lbl + (r[f] === true ? " : payé" : " : pas payé"); dots.append(t); });
+      row.append(day, mid, dots);
+      if (canWrite) { row.tabIndex = 0; row.onclick = () => openSheet(r); row.onkeydown = (e) => { if (e.key === "Enter") openSheet(r); }; }
+      ul.append(row);
+    });
+    box.append(ul);
+    return box;
   }
 
   function card(r, isPast) {
@@ -135,7 +194,12 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("overlay").hidden) closeSheet(); });
   $("tabNext").onclick = () => setView("next");
   $("tabPast").onclick = () => setView("past");
-  function setView(v) { view = v; $("tabNext").setAttribute("aria-selected", String(v === "next")); $("tabPast").setAttribute("aria-selected", String(v === "past")); render(); }
+  $("tabMonth").onclick = () => setView("month");
+  function setView(v) {
+    view = v;
+    [["tabNext", "next"], ["tabPast", "past"], ["tabMonth", "month"]].forEach(([id, k]) => $(id).setAttribute("aria-selected", String(v === k)));
+    render();
+  }
 
   $("delBtn").onclick = async () => {
     if (!delArmed) { delArmed = true; $("delBtn").classList.add("sure"); $("delBtn").textContent = "Oui, supprimer"; return; }
@@ -152,7 +216,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     $("saveBtn").disabled = true;
     try {
       if (editingId) { await col.doc(editingId).update(Object.assign(data, { modifieLe: firebase.firestore.FieldValue.serverTimestamp() })); toast("Examen modifié ✓"); }
-      else { await col.add(Object.assign(data, { payeW: false, payeB: false, payeS: false, creeLe: firebase.firestore.FieldValue.serverTimestamp(), creePar: (auth.currentUser && auth.currentUser.email) || "" })); toast("Examen ajouté 🚗"); if (data.date >= todayStr()) setView("next"); }
+      else { await col.add(Object.assign(data, { payeW: false, payeB: false, payeS: false, creeLe: firebase.firestore.FieldValue.serverTimestamp(), creePar: (auth.currentUser && auth.currentUser.email) || "" })); toast("Examen ajouté 🚗"); if (view === "past" && data.date >= todayStr()) setView("next"); }
       closeSheet();
     } catch (err) {
       if (err && /permission/i.test(err.code + " " + err.message)) $("formMsg").textContent = "Ce compte ne peut pas modifier la liste.";
