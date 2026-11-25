@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
 /* Layout : une colonne de cartes ; gros bouton « + » qui ouvre une feuille d'ajout avec des choix à toucher */
 :root {
@@ -227,6 +227,32 @@ h1 .car { display: none !important }
 .mrow { border-top: 1px solid var(--line) !important }
 .msep { background: transparent !important; border-bottom: 1px solid var(--line); border-radius: 0 !important; text-transform: uppercase; letter-spacing: .1em; font-size: 11px !important }
 .tbd { color: var(--unpaid) !important }
+
+
+/* Lin & noir plus lisible */
+:root { --muted: #645e55; --line: #d9d1c4; }
+body { font-weight: 600 !important; font-size: 17px !important }
+.card, .month, .tabs { border-width: 1.5px !important }
+.name { font-size: 24px !important }
+.tags, .msub { color: #4b463f !important; font-size: 16px !important }
+.tab:not([aria-selected="true"]) { font-weight: 700 !important; color: #3a352f !important }
+.tab { font-weight: 700 !important }
+.day { border-width: 1.5px !important; border-color: #23201c !important }
+.day .n { font-size: 34px !important }
+.day .m { color: #23201c !important; font-weight: 700 !important }
+.pay .lbl { font-size: 24px !important }
+.pay .st { font-size: 14px !important; font-weight: 800 !important }
+.pay:not(.paid) { border-width: 2px !important }
+.summary { color: #3a352f !important; font-weight: 600 }
+.mname { font-size: 16px }
+/* Noms des élèves en gras */
+.name, .mname { font-family: "Inter", system-ui, sans-serif !important; font-weight: 800 !important; letter-spacing: -.01em }
+.name { font-size: 21px !important }
+.tab { font-size: 15px !important }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --muted: #b5ad9f; --line: #4a443b } :root:not([data-theme="light"]) .tags, :root:not([data-theme="light"]) .msub, :root:not([data-theme="light"]) .tab:not([aria-selected="true"]), :root:not([data-theme="light"]) .summary { color: #d8d1c5 !important } :root:not([data-theme="light"]) .day { border-color: #f1ece4 !important } :root:not([data-theme="light"]) .day .m { color: #f1ece4 !important } }
+:root[data-theme="dark"] { --muted: #b5ad9f; --line: #4a443b }
+:root[data-theme="dark"] .tags, :root[data-theme="dark"] .msub, :root[data-theme="dark"] .tab:not([aria-selected="true"]), :root[data-theme="dark"] .summary { color: #d8d1c5 !important }
+:root[data-theme="dark"] .day { border-color: #f1ece4 !important } :root[data-theme="dark"] .day .m { color: #f1ece4 !important }
 
 /* Paiements : rouge = pas payé, vert = payé */
 :root { --paid: #3f8f57; --unpaid: #cf3f37; --later: #b98563; --unpaid-bg: #fdecea; }
