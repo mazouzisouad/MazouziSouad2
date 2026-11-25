@@ -1,0 +1,30 @@
+name: Rappel examens sans nom (veille 10h)
+
+on:
+  schedule:
+    - cron: '0 8 * * *'   # 10h à Paris en heure d'été
+    - cron: '0 9 * * *'   # 10h à Paris en heure d'hiver
+  workflow_dispatch:       # bouton « Run workflow » pour tester
+
+permissions:
+  contents: read
+
+jobs:
+  rappel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/elegant-cray-vh5fgk
+          sparse-checkout: scripts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/rappel.mjs
+        env:
+          ROBOT_EMAIL: ${{ secrets.ROBOT_EMAIL }}
+          ROBOT_PASSWORD: ${{ secrets.ROBOT_PASSWORD }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          SCHEDULE: ${{ github.event.schedule }}
+          EVENT: ${{ github.event_name }}

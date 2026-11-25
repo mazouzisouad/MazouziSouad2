@@ -37,6 +37,14 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     $("summary").textContent = (next.length === 0 ? "Aucun examen à venir" : next.length + " examen" + (next.length > 1 ? "s" : "") + " à venir")
       + (rows.length ? (unpaid ? " · " + unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : " · tout est payé 🎉") : "")
       + (next.filter(noName).length ? " · " + next.filter(noName).length + " sans nom" : "");
+    const t = new Date(); t.setDate(t.getDate() + 1);
+    const demain = t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0");
+    const nDemain = rows.filter(r => r.date === demain && noName(r)).length;
+    const nAuj = rows.filter(r => r.date === today && noName(r)).length;
+    const ban = $("banner");
+    ban.hidden = !(nDemain || nAuj);
+    ban.textContent = nAuj ? "⚠️ Aujourd'hui : " + nAuj + " examen" + (nAuj > 1 ? "s" : "") + " sans nom d'élève."
+      : "⚠️ Demain : " + nDemain + " examen" + (nDemain > 1 ? "s" : "") + " sans nom d'élève. Pensez à compléter !";
     list.replaceChildren();
     if (view === "month") { renderMonths(list, today); return; }
     const items = view === "next" ? next : past;
