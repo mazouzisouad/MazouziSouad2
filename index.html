@@ -227,6 +227,17 @@ h1 .car { display: none !important }
 .mrow { border-top: 1px solid var(--line) !important }
 .msep { background: transparent !important; border-bottom: 1px solid var(--line); border-radius: 0 !important; text-transform: uppercase; letter-spacing: .1em; font-size: 11px !important }
 .tbd { color: var(--unpaid) !important }
+
+/* Paiements : rouge = pas payé, vert = payé */
+:root { --paid: #3f8f57; --unpaid: #cf3f37; --later: #b98563; --unpaid-bg: #fdecea; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paid: #3a9457; --unpaid: #f0675d; --later: #c9926f; --unpaid-bg: #3a1f1c } }
+:root[data-theme="dark"] { --paid: #3a9457; --unpaid: #f0675d; --later: #c9926f; --unpaid-bg: #3a1f1c }
+.pay:not(.paid) { background: var(--unpaid-bg) !important; border-color: var(--unpaid) !important; color: var(--unpaid) !important }
+.pay.paid { color: #fff !important }
+.mdot:not(.paid) { background: var(--unpaid-bg) !important }
+/* « à compléter » et « bientôt » restent en terracotta (ce ne sont pas des paiements) */
+.tbd { color: var(--later) !important }
+.count.hot, .banner, .pill.tbdp { color: var(--later) !important; border-color: var(--later) !important }
 </style>
 
 </head>
