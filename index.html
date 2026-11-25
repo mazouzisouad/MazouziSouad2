@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#4f46e5">
+<meta name="theme-color" content="#f6f3ee">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://exams-1101c.firebaseapp.com; frame-src https://exams-1101c.firebaseapp.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap">
 <style>
 /* Layout : une colonne de cartes ; gros bouton « + » qui ouvre une feuille d'ajout avec des choix à toucher */
 :root {
@@ -181,6 +181,54 @@ header .tabs { align-self: flex-start }
 .paynow { font: inherit; font-weight: 800; font-size: 13px; border: 2px solid var(--paid); color: var(--paid); background: transparent; border-radius: 12px; padding: 8px 10px; white-space: nowrap; cursor: pointer }
 .paynow:active { background: var(--paid); color: #fff }
 </style>
+<style>
+/* Style « Lin & noir » : épuré, fond lin, noir, serif élégante */
+:root { --bg: #f6f3ee; --card: #fffdfa; --fg: #23201c; --muted: #8b857b; --line: #e5dfd5;
+  --primary: #23201c; --primary-fg: #fff; --paid: #7f8f73; --unpaid: #b98563; --danger: #a85b4a;
+  --f-display: "DM Serif Display", Georgia, serif; --f-body: "Inter", system-ui, sans-serif; }
+h1, .name, .sheet h2, .month h2, .day .n, .mday b, .pay .lbl { font-family: var(--f-display) !important; font-weight: 400 !important }
+h1 { font-size: 34px !important }
+.mday b { color: var(--fg) !important }
+
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1b1916; --card: #24211d; --fg: #f1ece4; --muted: #a39b8f; --line: #38332c;
+  --primary: #f1ece4; --primary-fg: #1b1916; --paid: #8f9d7a; --unpaid: #c9926f; --danger: #d07a66; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #1b1916; --card: #24211d; --fg: #f1ece4; --muted: #a39b8f; --line: #38332c;
+  --primary: #f1ece4; --primary-fg: #1b1916; --paid: #8f9d7a; --unpaid: #c9926f; --danger: #d07a66; color-scheme: dark }
+body { font-weight: 500 !important; letter-spacing: .005em }
+h1 .car { display: none !important }
+.card, .month, .tabs, .empty, .past-months, .login form { box-shadow: none !important; border: 1px solid var(--line) !important }
+.card, .month { border-radius: 16px !important }
+.card:hover { transform: none !important }
+.tabs { border-radius: 14px !important; background: transparent !important }
+.tab { font-weight: 600 !important; border-radius: 10px !important }
+.tab[aria-selected="true"] { background: var(--fg) !important; color: var(--bg) !important }
+.mode { border-width: 1px !important; border-radius: 10px !important; font-weight: 600 !important; background: transparent !important }
+.mode[aria-selected="true"] { background: var(--fg) !important; color: var(--bg) !important; border-color: var(--fg) !important }
+.day { background: transparent !important; color: var(--fg) !important; border: 1px solid var(--line) !important; border-radius: 12px !important }
+.day .m { color: var(--muted) !important; font-weight: 600 !important; letter-spacing: .12em !important; font-size: 11px !important }
+.pays-title, .field > span, .totals-lbl { text-transform: uppercase; letter-spacing: .12em; font-size: 11px !important; font-weight: 700 !important }
+.pay { border-width: 1px !important; border-radius: 12px !important }
+.pay.paid { background: var(--paid) !important; border-color: var(--paid) !important }
+.pay .lbl { font-size: 20px !important }
+.mdot { border-width: 1px !important; border-radius: 6px !important }
+.chip, .sheet input, .btn, .stepper .btn { border-width: 1px !important; border-radius: 12px !important; font-weight: 600 !important }
+.chip[aria-pressed="true"] { background: var(--fg) !important; border-color: var(--fg) !important; color: var(--bg) !important }
+.btn.main { background: var(--fg) !important; border-color: var(--fg) !important; color: var(--bg) !important }
+.fab { background: var(--fg) !important; color: var(--bg) !important; border-radius: 14px !important; box-shadow: 0 8px 20px -10px rgba(0,0,0,.35) !important; font-weight: 600 !important }
+.count, .pill { font-weight: 600 !important }
+.count.hot, .pill.wait { background: transparent !important; color: var(--unpaid) !important; border: 1px solid var(--unpaid) }
+.count.today, .pill.ok { background: transparent !important; color: var(--paid) !important; border: 1px solid var(--paid) }
+.banner { background: transparent !important; color: var(--unpaid) !important; border: 1px solid var(--unpaid); font-weight: 600 !important }
+.month.current { border-color: var(--fg) !important }
+.month h2 .now { background: transparent !important; color: var(--fg) !important; border: 1px solid var(--fg) }
+.note { background: transparent !important; border-left: 2px solid var(--line); border-radius: 0 !important; padding: 2px 10px !important; font-style: italic }
+.mrow { border-top: 1px solid var(--line) !important }
+.msep { background: transparent !important; border-bottom: 1px solid var(--line); border-radius: 0 !important; text-transform: uppercase; letter-spacing: .1em; font-size: 11px !important }
+.tbd { color: var(--unpaid) !important }
+</style>
+
 </head>
 <body>
 <div class="login" id="setup" hidden>
