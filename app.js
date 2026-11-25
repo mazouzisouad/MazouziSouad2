@@ -6,6 +6,15 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   const $ = (id) => document.getElementById(id);
   const ACCS = ["Towfiq", "Manel", "Monim", "Selim", "Walid", "Selma"];
   const PAYS = [["W", "payeW"], ["B", "payeB"], ["S", "payeS"]];
+  const PAYS_B = [["S", "payeS"]];
+  const paysOf = (r) => r.type === "B" ? PAYS_B : PAYS;
+  // Deux carnets : les examens et les « dates B » (même fonctionnement, paiement S seulement)
+  let mode = "exam";
+  try { if (localStorage.getItem("examens_mode") === "B") mode = "B"; } catch (e) {}
+  let allRows = [];
+  const inMode = (r) => mode === "B" ? r.type === "B" : r.type !== "B";
+  const nom1 = () => mode === "B" ? "date B" : "examen";
+  const noun = (n) => n + " " + (mode === "B" ? (n > 1 ? "dates B" : "date B") : (n > 1 ? "examens" : "examen"));
   const LIEUX = ["Gennevilliers", "Noisy", "Bobigny"];
   const COLORS = ["#ef4444", "#f59e0b", "#10b981", "#0ea5e9", "#8b5cf6", "#ec4899", "#14b8a6", "#64748b"];
   const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
@@ -41,8 +50,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const today = todayStr();
     const next = rows.filter(r => r.date >= today).sort((a, b) => a.date.localeCompare(b.date));
     const past = rows.filter(r => r.date < today).sort((a, b) => b.date.localeCompare(a.date));
-    const unpaid = rows.reduce((n, r) => n + PAYS.filter(([, f]) => r[f] !== true).length, 0);
-    $("summary").textContent = (next.length === 0 ? "Aucun examen à venir" : next.length + " examen" + (next.length > 1 ? "s" : "") + " à venir")
+    const unpaid = rows.reduce((n, r) => n + paysOf(r).filter(([, f]) => r[f] !== true).length, 0);
+    $("summary").textContent = (next.length === 0 ? (mode === "B" ? "Aucune date B à venir" : "Aucun examen à venir") : noun(next.length) + " à venir")
       + (rows.length ? (unpaid ? " · " + unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : " · tout est payé 🎉") : "")
       + manque(next).map(x => " · " + x).join("");
     const dateIn = (n) => { const t = new Date(); t.setDate(t.getDate() + n); return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0"); };
@@ -100,9 +109,9 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const head = el("div", "month-head");
     const title = el("h2", null, MONTHS_FULL[m - 1] + " " + y);
     if (isCurrent) title.append(el("span", "now", "Ce mois-ci"));
-    const unpaid = items.reduce((n, r) => n + PAYS.filter(([, f]) => r[f] !== true).length, 0);
+    const unpaid = items.reduce((n, r) => n + paysOf(r).filter(([, f]) => r[f] !== true).length, 0);
     const stats = el("div", "month-stats");
-    stats.append(el("span", "pill", items.length + " examen" + (items.length > 1 ? "s" : "")));
+    stats.append(el("span", "pill", noun(items.length)));
     manque(items).forEach(x => stats.append(el("span", "pill tbdp", x)));
     stats.append(el("span", "pill " + (unpaid ? "wait" : "ok"), unpaid ? unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : "Tout payé ✓"));
     head.append(title, stats);
@@ -128,7 +137,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     else if (r.lieu) sub.append(el("span", null, "📍 " + r.lieu));
     mid.append(sub);
     const dots = el("div", "mdots");
-    PAYS.forEach(([lbl, f]) => { const t = el("span", "mdot" + (r[f] === true ? " paid" : ""), lbl); t.title = "Paiement " + lbl + (r[f] === true ? " : payé" : " : pas payé"); dots.append(t); });
+    paysOf(r).forEach(([lbl, f]) => { const t = el("span", "mdot" + (r[f] === true ? " paid" : ""), lbl); t.title = "Paiement " + lbl + (r[f] === true ? " : payé" : " : pas payé"); dots.append(t); });
     row.append(day, mid, dots);
     if (canWrite) { row.tabIndex = 0; row.onclick = () => openSheet(r); row.onkeydown = (e) => { if (e.key === "Enter") openSheet(r); }; }
     return row;
@@ -154,7 +163,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
         const n = items.filter(x => x.date.slice(0, 7) === k).length;
         const [y, m] = k.split("-").map(Number);
         const h = el("div", "msep");
-        h.append(el("span", null, MONTHS_FULL[m - 1] + " " + y), el("b", null, n + " examen" + (n > 1 ? "s" : "")));
+        h.append(el("span", null, MONTHS_FULL[m - 1] + " " + y), el("b", null, noun(n)));
         ul.append(h);
       }
       ul.append(mrowEl(r, today, true, parLieu));
@@ -223,8 +232,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     top.append(day, who);
     c.append(top);
     if (typeof r.commentaire === "string" && r.commentaire.trim()) c.append(el("div", "note", "💬 " + r.commentaire));
-    const pays = el("div", "pays");
-    PAYS.forEach(([lbl, field]) => {
+    const pays = el("div", "pays" + (r.type === "B" ? " one" : ""));
+    paysOf(r).forEach(([lbl, field]) => {
       const paid = r[field] === true;
       const b = el("button", "pay" + (paid ? " paid" : ""));
       b.type = "button";
@@ -248,7 +257,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     try {
       await col.doc(r.id).update({ [field]: nowPaid, [field + "Date"]: nowPaid ? todayStr() : null });
       if (nowPaid) {
-        if (PAYS.every(([, f]) => f === field || r[f] === true)) { confetti(); toast("Tout est payé pour " + nameOf(r) + " 🎉"); }
+        if (paysOf(r).every(([, f]) => f === field || r[f] === true)) { confetti(); toast("Tout est payé pour " + nameOf(r) + " 🎉"); }
         else toast("Paiement " + field.slice(-1) + " noté ✓");
       }
     } catch (e) { toast("Le paiement n'a pas pu être enregistré"); }
@@ -277,7 +286,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     $("date").value = r ? r.date : "";
     $("commentaire").value = r && typeof r.commentaire === "string" ? r.commentaire : "";
     selAcc = r ? (r.accompagnateur || "") : ""; selLieu = r ? (r.lieu || "") : "";
-    $("sheetTitle").textContent = r ? "Modifier l'examen" : "Nouvel examen";
+    $("sheetTitle").textContent = r ? (r.type === "B" ? "Modifier la date B" : "Modifier l'examen") : (mode === "B" ? "Nouvelle date B" : "Nouvel examen");
     $("saveBtn").textContent = r ? "Enregistrer" : "Ajouter";
     $("delBtn").hidden = !r; $("delBtn").classList.remove("sure"); $("delBtn").textContent = "Supprimer";
     $("formMsg").textContent = "";
@@ -310,6 +319,19 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   $("tabPast").onclick = () => setView("past");
   $("tabMonth").onclick = () => setView("month");
   $("tabAcc").onclick = () => setView("acc");
+  function setMode(m) {
+    mode = m;
+    try { localStorage.setItem("examens_mode", m); } catch (e) {}
+    $("modeExam").setAttribute("aria-selected", String(m === "exam"));
+    $("modeB").setAttribute("aria-selected", String(m === "B"));
+    $("appTitle").firstChild.textContent = m === "B" ? "Dates B " : "Dates d'examen ";
+    $("fabLbl").textContent = m === "B" ? "Nouvelle date B" : "Nouvel examen";
+    rows = allRows.filter(inMode);
+    render();
+  }
+  $("modeExam").onclick = () => setMode("exam");
+  $("modeB").onclick = () => setMode("B");
+  setMode(mode);
   $("tabLieu").onclick = () => setView("lieu");
   function setView(v) {
     view = v;
@@ -320,7 +342,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   $("delBtn").onclick = async () => {
     if (!delArmed) { delArmed = true; $("delBtn").classList.add("sure"); $("delBtn").textContent = "Oui, supprimer"; return; }
     const id = editingId; closeSheet();
-    try { await col.doc(id).delete(); toast("Examen supprimé"); } catch (e) { toast("La suppression a échoué"); }
+    try { await col.doc(id).delete(); toast(mode === "B" ? "Date B supprimée" : "Examen supprimé"); } catch (e) { toast("La suppression a échoué"); }
   };
 
   $("sheet").addEventListener("submit", async (e) => {
@@ -331,15 +353,16 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (missing.length) { $("formMsg").textContent = "Il manque " + missing.join(", ") + "."; return; }
     $("saveBtn").disabled = true;
     try {
-      if (editingId) { await col.doc(editingId).update(Object.assign(data, { modifieLe: firebase.firestore.FieldValue.serverTimestamp() })); toast("Examen modifié ✓"); }
+      if (editingId) { await col.doc(editingId).update(Object.assign(data, { modifieLe: firebase.firestore.FieldValue.serverTimestamp() })); toast("Modifié ✓"); }
       else {
-        const base = Object.assign(data, { payeW: false, payeB: false, payeS: false, creeLe: firebase.firestore.FieldValue.serverTimestamp(), creePar: (auth.currentUser && auth.currentUser.email) || "" });
+        const pf = mode === "B" ? { type: "B", payeS: false } : { payeW: false, payeB: false, payeS: false };
+        const base = Object.assign(data, pf, { creeLe: firebase.firestore.FieldValue.serverTimestamp(), creePar: (auth.currentUser && auth.currentUser.email) || "" });
         if (places > 1) {
           const batch = fs.batch();
           for (let i = 0; i < places; i++) batch.set(col.doc(), i === 0 ? base : Object.assign({}, base, { eleve: "" }));
           await batch.commit();
           toast(places + " places ajoutées 🚗");
-        } else { await col.add(base); toast(data.eleve && data.accompagnateur ? "Examen ajouté 🚗" : "Examen ajouté, à compléter plus tard 🚗"); }
+        } else { await col.add(base); toast((mode === "B" ? "Date B ajoutée" : "Examen ajouté") + (data.eleve && data.accompagnateur ? " 🚗" : ", à compléter plus tard 🚗")); }
         if (view === "past" && data.date >= todayStr()) setView("next");
       }
       closeSheet();
@@ -387,7 +410,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       col = fs.collection("dates_examen");
       unsub = col.onSnapshot((snap) => {
         loaded = true;
-        rows = snap.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(r => typeof r.eleve === "string" && isDate(r.date));
+        allRows = snap.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(r => typeof r.eleve === "string" && isDate(r.date));
+        rows = allRows.filter(inMode);
         render();
       }, (err) => {
         loaded = true;

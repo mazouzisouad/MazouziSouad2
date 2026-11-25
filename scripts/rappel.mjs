@@ -52,8 +52,10 @@ async function main() {
     const lieux = {};
     sansNom.forEach((f) => { const l = (f.lieu && f.lieu.stringValue) || 'lieu ?'; lieux[l] = (lieux[l] || 0) + 1; });
     const manque = [nNom && `${nNom} sans nom d'élève`, nAcc && `${nAcc} sans accompagnateur`].filter(Boolean).join(', ');
+    const nB = sansNom.filter((f) => f.type && f.type.stringValue === 'B').length;
+    const dont = nB ? ` (dont ${nB} date${nB > 1 ? 's' : ''} B)` : '';
     titre = `Examens dans 2 jours à compléter (${sansNom.length})`;
-    texte = `Dans 2 jours (${quand}) : ${manque}. Lieux : `
+    texte = `Dans 2 jours (${quand}) : ${manque}${dont}. Lieux : `
       + Object.entries(lieux).map(([l, n]) => `${n} à ${l}`).join(', ') + '. Touchez pour compléter.';
   } else if (test) {
     titre = 'Rappel des examens : test réussi ✅';

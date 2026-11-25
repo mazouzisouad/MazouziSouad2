@@ -173,6 +173,10 @@ header .tabs { align-self: flex-start }
 .tot b { font-family: var(--f-display); font-size: 15px; color: var(--primary) }
 .msep { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; background: var(--bg); border-radius: 12px; padding: 6px 12px; margin-top: 8px; font-weight: 800; font-size: 14px }
 .msep b { color: var(--primary) }
+.modes { display: flex; gap: 8px; margin-bottom: 12px }
+.mode { font: inherit; font-weight: 800; border: 2px solid var(--line); background: var(--card); color: var(--muted); padding: 8px 16px; border-radius: 14px; cursor: pointer }
+.mode[aria-selected="true"] { border-color: var(--fg); background: var(--fg); color: var(--bg) }
+.pays.one { grid-template-columns: minmax(0, 1fr) }
 </style>
 </head>
 <body>
@@ -202,7 +206,11 @@ header .tabs { align-self: flex-start }
   <div class="topline"><span class="mail" id="userMail"></span><button type="button" class="linkbtn" id="logoutBtn">Se déconnecter</button></div>
   <header>
     <div>
-      <h1>Dates d'examen <span class="car" aria-hidden="true">🚗</span></h1>
+      <div class="modes" role="tablist" aria-label="Carnet">
+        <button class="mode" role="tab" id="modeExam" aria-selected="true">📋 Examens</button>
+        <button class="mode" role="tab" id="modeB" aria-selected="false">🅱️ Dates B</button>
+      </div>
+      <h1 id="appTitle">Dates d'examen <span class="car" aria-hidden="true">🚗</span></h1>
       <p class="summary" id="summary">Chargement…</p>
     </div>
     <div class="tabs" role="tablist">
@@ -218,7 +226,7 @@ header .tabs { align-self: flex-start }
 </div>
 </div>
 
-<button class="fab" id="fab" type="button" hidden><span aria-hidden="true">＋</span> Nouvel examen</button>
+<button class="fab" id="fab" type="button" hidden><span aria-hidden="true">＋</span> <span id="fabLbl">Nouvel examen</span></button>
 
 <div class="overlay" id="overlay" hidden>
   <form class="sheet" id="sheet" autocomplete="off" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
