@@ -56,6 +56,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     }
     list.replaceChildren();
     if (view === "month") { renderMonths(list, today); return; }
+    if (view === "acc") { renderAccs(list, today); return; }
     const items = view === "next" ? next : past;
     if (!items.length) {
       const e = el("div", "empty");
@@ -106,24 +107,68 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     head.append(title, stats);
     box.append(head);
     const ul = el("div", "mrows");
-    items.forEach(r => {
-      const d = parse(r.date);
-      const row = el("div", "mrow" + (r.date < today ? " past" : ""));
-      const day = el("div", "mday"); day.append(el("b", null, String(d.getDate())), el("span", null, DAYS[d.getDay()]));
-      const mid = el("div", "mmid");
-      mid.append(el("div", "mname" + (noName(r) ? " tbd" : ""), nameOf(r)));
-      const sub = el("div", "msub");
-      if (r.accompagnateur) { const a = el("span"); a.append(avatar(r.accompagnateur), r.accompagnateur); sub.append(a); } else sub.append(el("span", "tbd", "👤 À définir"));
-      if (r.lieu) sub.append(el("span", null, "📍 " + r.lieu));
-      mid.append(sub);
-      const dots = el("div", "mdots");
-      PAYS.forEach(([lbl, f]) => { const t = el("span", "mdot" + (r[f] === true ? " paid" : ""), lbl); t.title = "Paiement " + lbl + (r[f] === true ? " : payé" : " : pas payé"); dots.append(t); });
-      row.append(day, mid, dots);
-      if (canWrite) { row.tabIndex = 0; row.onclick = () => openSheet(r); row.onkeydown = (e) => { if (e.key === "Enter") openSheet(r); }; }
-      ul.append(row);
-    });
+    items.forEach(r => ul.append(mrowEl(r, today, false)));
     box.append(ul);
     return box;
+  }
+
+  function mrowEl(r, today, byAcc) {
+    const d = parse(r.date);
+    const row = el("div", "mrow" + (r.date < today ? " past" : ""));
+    const day = el("div", "mday");
+    day.append(el("b", null, String(d.getDate())), el("span", null, byAcc ? MONTHS[d.getMonth()] : DAYS[d.getDay()]));
+    const mid = el("div", "mmid");
+    mid.append(el("div", "mname" + (noName(r) ? " tbd" : ""), nameOf(r)));
+    const sub = el("div", "msub");
+    if (byAcc) sub.append(el("span", null, DAYS[d.getDay()] + " " + d.getDate() + " " + MONTHS[d.getMonth()] + " " + d.getFullYear()));
+    else if (r.accompagnateur) { const a = el("span"); a.append(avatar(r.accompagnateur), r.accompagnateur); sub.append(a); } else sub.append(el("span", "tbd", "👤 À définir"));
+    if (r.lieu) sub.append(el("span", null, "📍 " + r.lieu));
+    mid.append(sub);
+    const dots = el("div", "mdots");
+    PAYS.forEach(([lbl, f]) => { const t = el("span", "mdot" + (r[f] === true ? " paid" : ""), lbl); t.title = "Paiement " + lbl + (r[f] === true ? " : payé" : " : pas payé"); dots.append(t); });
+    row.append(day, mid, dots);
+    if (canWrite) { row.tabIndex = 0; row.onclick = () => openSheet(r); row.onkeydown = (e) => { if (e.key === "Enter") openSheet(r); }; }
+    return row;
+  }
+
+  // ---------- vue « Par accompagnateur » ----------
+  function renderAccs(list, today) {
+    if (!rows.length) {
+      const e = el("div", "empty"); e.append(el("div", "big", "👥"), el("p", null, "Aucun examen pour l'instant."));
+      list.append(e); return;
+    }
+    const names = ACCS.slice();
+    rows.forEach(r => { if (r.accompagnateur && !names.includes(r.accompagnateur)) names.push(r.accompagnateur); });
+    const groups = names.map(n => [n, rows.filter(r => r.accompagnateur === n)]);
+    const sansAcc = rows.filter(noAcc);
+    if (sansAcc.length) groups.push(["", sansAcc]);
+    groups.forEach(([name, items]) => {
+      const next = items.filter(r => r.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+      const past = items.filter(r => r.date < today).sort((a, b) => b.date.localeCompare(a.date));
+      const box = el("section", "month acc-box");
+      const head = el("div", "month-head");
+      const title = el("h2");
+      if (name) title.append(avatar(name), name); else title.append(el("span", "tbd", "👤 À définir"));
+      const stats = el("div", "month-stats");
+      stats.append(el("span", "pill", next.length ? next.length + " à venir" : "Aucun à venir"));
+      if (past.length) stats.append(el("span", "pill", past.length + " passé" + (past.length > 1 ? "s" : "")));
+      head.append(title, stats);
+      box.append(head);
+      if (next.length) {
+        const ul = el("div", "mrows");
+        next.forEach(r => ul.append(mrowEl(r, today, true)));
+        box.append(ul);
+      }
+      if (past.length) {
+        const d = el("details", "acc-past");
+        d.append(el("summary", null, "Voir les examens passés (" + past.length + ")"));
+        const ul = el("div", "mrows");
+        past.forEach(r => ul.append(mrowEl(r, today, true)));
+        d.append(ul);
+        box.append(d);
+      }
+      list.append(box);
+    });
   }
 
   function card(r, isPast) {
@@ -232,9 +277,10 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   $("tabNext").onclick = () => setView("next");
   $("tabPast").onclick = () => setView("past");
   $("tabMonth").onclick = () => setView("month");
+  $("tabAcc").onclick = () => setView("acc");
   function setView(v) {
     view = v;
-    [["tabNext", "next"], ["tabPast", "past"], ["tabMonth", "month"]].forEach(([id, k]) => $(id).setAttribute("aria-selected", String(v === k)));
+    [["tabNext", "next"], ["tabPast", "past"], ["tabMonth", "month"], ["tabAcc", "acc"]].forEach(([id, k]) => $(id).setAttribute("aria-selected", String(v === k)));
     render();
   }
 
