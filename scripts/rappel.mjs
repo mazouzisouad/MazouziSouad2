@@ -1,4 +1,4 @@
-// Rappel de la veille : prévient (notification ntfy) s'il y a demain des examens sans nom d'élève.
+// Rappel de la veille : prévient (notification ntfy) s'il y a demain des examens sans nom d'élève ou sans accompagnateur.
 // Lancé chaque jour vers 10h (heure de Paris) par GitHub Actions. Aucune donnée d'élève n'est écrite dans les journaux.
 const API_KEY = 'AIzaSyBuPC4GpVpRiOMQT1dZ6P8drNwg1OTcr0c';
 const PROJECT = 'exams-1101c';
@@ -40,8 +40,10 @@ async function main() {
   });
   if (!q.ok) throw new Error('Lecture des examens impossible (' + q.status + ').');
   const docs = (await q.json()).filter((x) => x.document).map((x) => x.document.fields || {});
-  const sansNom = docs.filter((f) => !(f.eleve && f.eleve.stringValue && f.eleve.stringValue.trim()));
-  console.log(`Examens demain : ${docs.length}, sans nom : ${sansNom.length}`);
+  const vide = (f, k) => !(f[k] && f[k].stringValue && f[k].stringValue.trim());
+  const sansNom = docs.filter((f) => vide(f, 'eleve') || vide(f, 'accompagnateur'));
+  const nNom = docs.filter((f) => vide(f, 'eleve')).length, nAcc = docs.filter((f) => vide(f, 'accompagnateur')).length;
+  console.log(`Examens demain : ${docs.length}, à compléter : ${sansNom.length}`);
 
   const jour = new Date(Date.UTC(t.y, t.m - 1, t.d, 12));
   const quand = `${JOURS[jour.getUTCDay()]} ${t.d} ${MOIS[t.m - 1]}`;
@@ -49,12 +51,13 @@ async function main() {
   if (sansNom.length) {
     const lieux = {};
     sansNom.forEach((f) => { const l = (f.lieu && f.lieu.stringValue) || 'lieu ?'; lieux[l] = (lieux[l] || 0) + 1; });
-    titre = `Examens de demain : ${sansNom.length} sans nom`;
-    texte = `Demain (${quand}), ${sansNom.length} examen${sansNom.length > 1 ? 's n\'ont' : ' n\'a'} pas encore de nom d'élève : `
+    const manque = [nNom && `${nNom} sans nom d'élève`, nAcc && `${nAcc} sans accompagnateur`].filter(Boolean).join(', ');
+    titre = `Examens de demain à compléter (${sansNom.length})`;
+    texte = `Demain (${quand}) : ${manque}. Lieux : `
       + Object.entries(lieux).map(([l, n]) => `${n} à ${l}`).join(', ') + '. Touchez pour compléter.';
   } else if (test) {
     titre = 'Rappel des examens : test réussi ✅';
-    texte = `Tout fonctionne. Demain (${quand}) : ${docs.length} examen(s), aucun sans nom.`;
+    texte = `Tout fonctionne. Demain (${quand}) : ${docs.length} examen(s), rien à compléter.`;
   } else { console.log('Rien à signaler.'); return; }
 
   const r = await fetch(`https://ntfy.sh/${encodeURIComponent(NTFY_TOPIC)}`, {

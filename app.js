@@ -22,6 +22,14 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   const TBD = "Élève à définir";
   const nameOf = (r) => (r.eleve && r.eleve.trim()) ? r.eleve : TBD;
   const noName = (r) => !(r.eleve && r.eleve.trim());
+  const noAcc = (r) => !(r.accompagnateur && r.accompagnateur.trim());
+  const incomplet = (r) => noName(r) || noAcc(r);
+  function manque(list) {
+    const a = list.filter(noName).length, b = list.filter(noAcc).length, parts = [];
+    if (a) parts.push(a + " sans nom");
+    if (b) parts.push(b + " sans accompagnateur");
+    return parts;
+  }
   function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function colorFor(name) { const i = ACCS.indexOf(name); if (i >= 0) return COLORS[i]; let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COLORS[h % COLORS.length]; }
   function avatar(name) { const a = el("span", "avatar", (name || "?").charAt(0).toUpperCase()); a.style.background = colorFor(name || "?"); a.setAttribute("aria-hidden", "true"); return a; }
@@ -36,15 +44,14 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const unpaid = rows.reduce((n, r) => n + PAYS.filter(([, f]) => r[f] !== true).length, 0);
     $("summary").textContent = (next.length === 0 ? "Aucun examen à venir" : next.length + " examen" + (next.length > 1 ? "s" : "") + " à venir")
       + (rows.length ? (unpaid ? " · " + unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : " · tout est payé 🎉") : "")
-      + (next.filter(noName).length ? " · " + next.filter(noName).length + " sans nom" : "");
+      + manque(next).map(x => " · " + x).join("");
     const t = new Date(); t.setDate(t.getDate() + 1);
     const demain = t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0");
-    const nDemain = rows.filter(r => r.date === demain && noName(r)).length;
-    const nAuj = rows.filter(r => r.date === today && noName(r)).length;
+    const lAuj = rows.filter(r => r.date === today && incomplet(r)), lDemain = rows.filter(r => r.date === demain && incomplet(r));
     const ban = $("banner");
-    ban.hidden = !(nDemain || nAuj);
-    ban.textContent = nAuj ? "⚠️ Aujourd'hui : " + nAuj + " examen" + (nAuj > 1 ? "s" : "") + " sans nom d'élève."
-      : "⚠️ Demain : " + nDemain + " examen" + (nDemain > 1 ? "s" : "") + " sans nom d'élève. Pensez à compléter !";
+    ban.hidden = !(lAuj.length || lDemain.length);
+    ban.textContent = lAuj.length ? "⚠️ Aujourd'hui, examens à compléter : " + manque(lAuj).join(", ") + "."
+      : "⚠️ Demain, examens à compléter : " + manque(lDemain).join(", ") + ". Pensez à les remplir !";
     list.replaceChildren();
     if (view === "month") { renderMonths(list, today); return; }
     const items = view === "next" ? next : past;
@@ -92,8 +99,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const unpaid = items.reduce((n, r) => n + PAYS.filter(([, f]) => r[f] !== true).length, 0);
     const stats = el("div", "month-stats");
     stats.append(el("span", "pill", items.length + " examen" + (items.length > 1 ? "s" : "")));
-    const sansNom = items.filter(noName).length;
-    if (sansNom) stats.append(el("span", "pill tbdp", sansNom + " sans nom"));
+    manque(items).forEach(x => stats.append(el("span", "pill tbdp", x)));
     stats.append(el("span", "pill " + (unpaid ? "wait" : "ok"), unpaid ? unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : "Tout payé ✓"));
     head.append(title, stats);
     box.append(head);
@@ -105,7 +111,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       const mid = el("div", "mmid");
       mid.append(el("div", "mname" + (noName(r) ? " tbd" : ""), nameOf(r)));
       const sub = el("div", "msub");
-      if (r.accompagnateur) { const a = el("span"); a.append(avatar(r.accompagnateur), r.accompagnateur); sub.append(a); }
+      if (r.accompagnateur) { const a = el("span"); a.append(avatar(r.accompagnateur), r.accompagnateur); sub.append(a); } else sub.append(el("span", "tbd", "👤 À définir"));
       if (r.lieu) sub.append(el("span", null, "📍 " + r.lieu));
       mid.append(sub);
       const dots = el("div", "mdots");
@@ -132,7 +138,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       nr.append(el("span", "count" + (n === 0 ? " today" : n <= 3 ? " hot" : ""), n === 0 ? "Aujourd'hui !" : n === 1 ? "Demain" : "J-" + n));
     }
     const tags = el("div", "tags");
-    if (r.accompagnateur) { const t = el("span"); t.append(avatar(r.accompagnateur), r.accompagnateur); tags.append(t); }
+    if (r.accompagnateur) { const t = el("span"); t.append(avatar(r.accompagnateur), r.accompagnateur); tags.append(t); } else tags.append(el("span", "tbd", "👤 Accompagnateur à définir"));
     if (r.lieu) tags.append(el("span", null, "📍 " + r.lieu));
     who.append(nr, tags);
     top.append(day, who);
@@ -183,7 +189,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     });
   }
   function drawChips() {
-    renderChips("accChips", ACCS, selAcc, (v) => { selAcc = v; drawChips(); }, true);
+    renderChips("accChips", ACCS, selAcc, (v) => { selAcc = selAcc === v ? "" : v; drawChips(); }, true);
     renderChips("lieuChips", LIEUX, selLieu, (v) => { selLieu = v; drawChips(); }, false);
   }
   function openSheet(r) {
@@ -199,7 +205,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     places = 1; $("placesField").hidden = !!r; $("placesN").textContent = "1";
     drawChips();
     $("overlay").hidden = false;
-    if (r && noName(r)) setTimeout(() => $("eleve").focus(), 50);
+    if (r && incomplet(r) && noName(r)) setTimeout(() => $("eleve").focus(), 50);
   }
   let places = 1;
   $("placesMinus").onclick = () => { places = Math.max(1, places - 1); $("placesN").textContent = String(places); };
@@ -229,7 +235,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     e.preventDefault();
     if (!col) { $("formMsg").textContent = "Connectez-vous d'abord."; return; }
     const data = { eleve: $("eleve").value.trim(), accompagnateur: selAcc, lieu: selLieu, date: $("date").value, commentaire: $("commentaire").value.trim() };
-    const missing = [!data.accompagnateur && "l'accompagnateur", !data.lieu && "le lieu", !data.date && "la date"].filter(Boolean);
+    const missing = [!data.lieu && "le lieu", !data.date && "la date"].filter(Boolean);
     if (missing.length) { $("formMsg").textContent = "Il manque " + missing.join(", ") + "."; return; }
     $("saveBtn").disabled = true;
     try {
@@ -241,7 +247,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
           for (let i = 0; i < places; i++) batch.set(col.doc(), i === 0 ? base : Object.assign({}, base, { eleve: "" }));
           await batch.commit();
           toast(places + " places ajoutées 🚗");
-        } else { await col.add(base); toast(data.eleve ? "Examen ajouté 🚗" : "Place ajoutée, le nom viendra plus tard 🚗"); }
+        } else { await col.add(base); toast(data.eleve && data.accompagnateur ? "Examen ajouté 🚗" : "Examen ajouté, à compléter plus tard 🚗"); }
         if (view === "past" && data.date >= todayStr()) setView("next");
       }
       closeSheet();
