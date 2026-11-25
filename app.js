@@ -46,6 +46,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
 
   function render() {
     if (!loaded) return;
+    updateRedoTab();
     const list = $("list");
     const today = todayStr();
     const next = rows.filter(r => r.date >= today).sort((a, b) => a.date.localeCompare(b.date));
@@ -68,6 +69,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (view === "acc") { renderAccs(list, today, false); return; }
     if (view === "lieu") { renderAccs(list, today, true); return; }
     if (view === "pay") { renderPay(list, today); return; }
+    if (view === "redo") { renderRedo(list, today); return; }
     const items = view === "next" ? next : past;
     if (!items.length) {
       const e = el("div", "empty");
@@ -181,6 +183,67 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       }
       ul.append(mrowEl(r, today, true, parLieu));
     });
+  }
+
+  // ---------- vue « À repasser » (échecs) ----------
+  const norm = (t) => (t || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
+  // Un échec est « reprogrammé » si le même élève a un examen plus tard dans le même carnet.
+  function relance(r) {
+    if (noName(r)) return null;
+    const n = norm(r.eleve);
+    return rows.filter(x => x.id !== r.id && x.date > r.date && norm(x.eleve) === n).sort((a, b) => a.date.localeCompare(b.date))[0] || null;
+  }
+  function echecsAFaire() { return rows.filter(r => r.resultat === "echec" && !relance(r)); }
+  function updateRedoTab() {
+    const n = echecsAFaire().length;
+    $("tabRedo").textContent = "À repasser" + (n ? " (" + n + ")" : "");
+    $("tabRedo").classList.toggle("alert", n > 0);
+  }
+  function renderRedo(list, today) {
+    const echecs = rows.filter(r => r.resultat === "echec").sort((a, b) => a.date.localeCompare(b.date));
+    const todo = echecs.filter(r => !relance(r)), done = echecs.filter(r => relance(r));
+    const box = el("section", "month");
+    const head = el("div", "month-head");
+    head.append(el("h2", null, "À repasser"), el("span", "pill " + (todo.length ? "res-ko" : "res-ok"), todo.length ? todo.length + " à reprogrammer" : "Personne à reprogrammer ✓"));
+    box.append(head);
+    if (!echecs.length) box.append(el("p", "hint", "Quand vous cochez « ✗ Échec » sur un examen, l'élève apparaît ici pour reprogrammer son passage."));
+    const ul = el("div", "mrows redo-list");
+    todo.forEach(r => {
+      const row = mrowEl(r, today, true, null);
+      const nb = rows.filter(x => x.resultat === "echec" && norm(x.eleve) === norm(r.eleve) && !noName(r)).length;
+      if (nb > 1) row.querySelector(".msub").append(el("span", "tbd", nb + " échecs"));
+      const btn = el("button", "redobtn", "📅 Reprogrammer");
+      btn.type = "button"; btn.disabled = !canWrite;
+      btn.onclick = (e) => { e.stopPropagation(); reprogrammer(r); };
+      row.querySelector(".mdots").replaceWith(btn);
+      ul.append(row);
+    });
+    box.append(ul);
+    list.append(box);
+    if (done.length) {
+      const d = el("details", "past-months");
+      d.append(el("summary", null, "Déjà reprogrammés (" + done.length + ")"));
+      const ul2 = el("div", "mrows");
+      done.slice().reverse().forEach(r => {
+        const row = mrowEl(r, today, true, null);
+        const nx = relance(r), dd = parse(nx.date);
+        row.querySelector(".msub").append(el("span", "okline", "→ repasse le " + dd.getDate() + " " + MONTHS[dd.getMonth()] + " " + dd.getFullYear()));
+        ul2.append(row);
+      });
+      d.append(ul2);
+      list.append(d);
+    }
+  }
+  function reprogrammer(r) {
+    openSheet(null);
+    $("eleve").value = r.eleve || "";
+    selAcc = r.accompagnateur || ""; selLieu = r.lieu || "";
+    drawChips();
+    const d = parse(r.date);
+    $("commentaire").value = "Repassage (échec du " + d.getDate() + " " + MONTHS[d.getMonth()] + ")";
+    $("sheetTitle").textContent = "Repassage de " + nameOf(r);
+    $("placesField").hidden = true;
+    setTimeout(() => $("date").focus(), 50);
   }
 
   // ---------- vue « Paiements en attente » ----------
@@ -389,9 +452,10 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   setMode(mode);
   $("tabLieu").onclick = () => setView("lieu");
   $("tabPay").onclick = () => setView("pay");
+  $("tabRedo").onclick = () => setView("redo");
   function setView(v) {
     view = v;
-    [["tabNext", "next"], ["tabPast", "past"], ["tabMonth", "month"], ["tabAcc", "acc"], ["tabLieu", "lieu"], ["tabPay", "pay"]].forEach(([id, k]) => $(id).setAttribute("aria-selected", String(v === k)));
+    [["tabNext", "next"], ["tabPast", "past"], ["tabMonth", "month"], ["tabAcc", "acc"], ["tabLieu", "lieu"], ["tabPay", "pay"], ["tabRedo", "redo"]].forEach(([id, k]) => $(id).setAttribute("aria-selected", String(v === k)));
     render();
   }
 

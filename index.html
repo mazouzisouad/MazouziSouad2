@@ -275,6 +275,13 @@ body { font-weight: 600 !important; font-size: 17px !important }
 .mres.reussi { background: var(--paid) } .mres.echec { background: var(--unpaid) }
 .pill.res-ok { background: transparent !important; color: var(--paid) !important; border: 1px solid var(--paid) }
 .pill.res-ko { background: transparent !important; color: var(--unpaid) !important; border: 1px solid var(--unpaid) }
+
+/* Onglet « À repasser » */
+.tab.alert:not([aria-selected="true"]) { color: var(--unpaid) !important }
+.redobtn { font: inherit; font-weight: 800; font-size: 13px; border: 1.5px solid var(--fg); background: var(--fg); color: var(--bg); border-radius: 12px; padding: 8px 10px; white-space: nowrap; cursor: pointer }
+.okline { color: var(--paid) !important; font-weight: 700 }
+.hint { color: var(--muted); margin: 0 }
+.redo-list .mrow.past { opacity: 1 }
 </style>
 
 </head>
@@ -319,6 +326,7 @@ body { font-weight: 600 !important; font-size: 17px !important }
       <button class="tab" role="tab" id="tabLieu" aria-selected="false">Par lieu</button>
       <button class="tab" role="tab" id="tabAcc" aria-selected="false">Accompagnateurs</button>
       <button class="tab" role="tab" id="tabPay" aria-selected="false">Paiements en attente</button>
+      <button class="tab" role="tab" id="tabRedo" aria-selected="false">À repasser</button>
     </div>
   </header>
   <div class="banner" id="banner" role="status" hidden></div>
