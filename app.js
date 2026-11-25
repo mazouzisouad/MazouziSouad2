@@ -114,6 +114,9 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const stats = el("div", "month-stats");
     stats.append(el("span", "pill", noun(items.length)));
     manque(items).forEach(x => stats.append(el("span", "pill tbdp", x)));
+    const nR = items.filter(x => x.resultat === "reussi").length, nE = items.filter(x => x.resultat === "echec").length;
+    if (nR) stats.append(el("span", "pill res-ok", nR + " réussi" + (nR > 1 ? "s" : "")));
+    if (nE) stats.append(el("span", "pill res-ko", nE + " échec" + (nE > 1 ? "s" : "")));
     stats.append(el("span", "pill " + (unpaid ? "wait" : "ok"), unpaid ? unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : "Tout payé ✓"));
     head.append(title, stats);
     box.append(head);
@@ -145,7 +148,10 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       b.type = "button"; b.setAttribute("aria-label", "Marquer le paiement " + payField.slice(-1) + " payé pour " + nameOf(r));
       b.onclick = (e) => { e.stopPropagation(); togglePay(r, payField); };
       row.append(day, mid, b);
-    } else row.append(day, mid, dots);
+    } else {
+      if (r.resultat) dots.prepend(el("span", "mres " + r.resultat, r.resultat === "reussi" ? "✓" : "✗"));
+      row.append(day, mid, dots);
+    }
     if (canWrite) { row.tabIndex = 0; row.onclick = () => openSheet(r); row.onkeydown = (e) => { if (e.key === "Enter") openSheet(r); }; }
     return row;
   }
@@ -279,10 +285,26 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       pays.append(b);
     });
     c.append(el("div", "pays-title", "Paiements"), pays);
+    // Résultat de l'examen
+    const res = el("div", "res");
+    [["reussi", "✓ Réussi"], ["echec", "✗ Échec"]].forEach(([v, txt]) => {
+      const b = el("button", "resbtn " + v + (r.resultat === v ? " on" : ""), txt);
+      b.type = "button"; b.disabled = !canWrite;
+      b.setAttribute("aria-pressed", r.resultat === v ? "true" : "false");
+      b.onclick = (e) => { e.stopPropagation(); setResultat(r, r.resultat === v ? null : v); };
+      res.append(b);
+    });
+    c.append(el("div", "pays-title", "Résultat"), res);
     if (canWrite) { c.tabIndex = 0; c.onclick = () => openSheet(r); c.onkeydown = (e) => { if (e.key === "Enter" && e.target === c) openSheet(r); }; }
     return c;
   }
 
+  async function setResultat(r, v) {
+    try {
+      await col.doc(r.id).update({ resultat: v ? v : firebase.firestore.FieldValue.delete() });
+      if (v === "reussi") { confetti(); toast("Bravo " + nameOf(r) + " ! 🎉"); } else if (v === "echec") toast("Échec noté"); else toast("Résultat effacé");
+    } catch (e) { toast("Le résultat n'a pas pu être enregistré"); }
+  }
   const busy = new Set();
   async function togglePay(r, field) {
     const key = r.id + field; if (busy.has(key)) return; busy.add(key);

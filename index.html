@@ -264,6 +264,17 @@ body { font-weight: 600 !important; font-size: 17px !important }
 /* « à compléter » et « bientôt » restent en terracotta (ce ne sont pas des paiements) */
 .tbd { color: var(--later) !important }
 .count.hot, .banner, .pill.tbdp { color: var(--later) !important; border-color: var(--later) !important }
+
+/* Résultat : réussi / échec */
+.res { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
+.resbtn { font: inherit; font-weight: 800; font-size: 15px; border-radius: 12px; padding: 10px 6px; cursor: pointer; background: transparent; border: 1.5px dashed var(--line); color: var(--muted) }
+.resbtn.reussi.on { background: var(--paid); border: 1.5px solid var(--paid); color: #fff }
+.resbtn.echec.on { background: var(--unpaid); border: 1.5px solid var(--unpaid); color: #fff }
+.resbtn:disabled { cursor: default }
+.mres { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 14px; color: #fff; margin-right: 4px }
+.mres.reussi { background: var(--paid) } .mres.echec { background: var(--unpaid) }
+.pill.res-ok { background: transparent !important; color: var(--paid) !important; border: 1px solid var(--paid) }
+.pill.res-ko { background: transparent !important; color: var(--unpaid) !important; border: 1px solid var(--unpaid) }
 </style>
 
 </head>

@@ -17,12 +17,13 @@ service cloud.firestore {
     function examenValide(d) {
       return d.keys().hasOnly(['eleve', 'accompagnateur', 'lieu', 'date', 'commentaire',
                                'payeW', 'payeB', 'payeS', 'payeWDate', 'payeBDate', 'payeSDate',
-                               'creeLe', 'creePar', 'modifieLe', 'type'])
+                               'creeLe', 'creePar', 'modifieLe', 'type', 'resultat'])
         && d.eleve is string && d.eleve.size() <= 80
         && d.date is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
         && texte(d, 'accompagnateur', 80) && texte(d, 'lieu', 120)
         && texte(d, 'commentaire', 300) && texte(d, 'creePar', 120)
-        && (!('type' in d) || d.type == 'B');
+        && (!('type' in d) || d.type == 'B')
+        && (!('resultat' in d) || d.resultat in ['reussi', 'echec']);
     }
     match /dates_examen/{id} {
       allow read, delete: if connecte();
