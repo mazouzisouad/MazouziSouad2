@@ -67,6 +67,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (view === "month") { renderMonths(list, today); return; }
     if (view === "acc") { renderAccs(list, today, false); return; }
     if (view === "lieu") { renderAccs(list, today, true); return; }
+    if (view === "pay") { renderPay(list, today); return; }
     const items = view === "next" ? next : past;
     if (!items.length) {
       const e = el("div", "empty");
@@ -123,7 +124,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     return box;
   }
 
-  function mrowEl(r, today, byAcc, byLieu) {
+  function mrowEl(r, today, byAcc, byLieu, payField) {
     const d = parse(r.date);
     const row = el("div", "mrow" + (r.date < today ? " past" : ""));
     const day = el("div", "mday");
@@ -136,9 +137,15 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (byLieu) { if (r.accompagnateur) { const a = el("span"); a.append(avatar(r.accompagnateur), r.accompagnateur); sub.append(a); } else sub.append(el("span", "tbd", "👤 À définir")); }
     else if (r.lieu) sub.append(el("span", null, "📍 " + r.lieu));
     mid.append(sub);
+    if (byAcc && byLieu === null) { if (r.accompagnateur) { const a = el("span"); a.append(avatar(r.accompagnateur), r.accompagnateur); sub.prepend(a); } }
     const dots = el("div", "mdots");
     paysOf(r).forEach(([lbl, f]) => { const t = el("span", "mdot" + (r[f] === true ? " paid" : ""), lbl); t.title = "Paiement " + lbl + (r[f] === true ? " : payé" : " : pas payé"); dots.append(t); });
-    row.append(day, mid, dots);
+    if (payField && canWrite) {
+      const b = el("button", "paynow", "✓ Payé");
+      b.type = "button"; b.setAttribute("aria-label", "Marquer le paiement " + payField.slice(-1) + " payé pour " + nameOf(r));
+      b.onclick = (e) => { e.stopPropagation(); togglePay(r, payField); };
+      row.append(day, mid, b);
+    } else row.append(day, mid, dots);
     if (canWrite) { row.tabIndex = 0; row.onclick = () => openSheet(r); row.onkeydown = (e) => { if (e.key === "Enter") openSheet(r); }; }
     return row;
   }
@@ -168,6 +175,32 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       }
       ul.append(mrowEl(r, today, true, parLieu));
     });
+  }
+
+  // ---------- vue « Paiements en attente » ----------
+  function renderPay(list, today) {
+    const pays = mode === "B" ? PAYS_B : PAYS;
+    let total = 0;
+    pays.forEach(([lbl, f]) => {
+      const items = rows.filter(r => r[f] !== true).sort((a, b) => a.date.localeCompare(b.date));
+      total += items.length;
+      const box = el("section", "month");
+      const head = el("div", "month-head");
+      const title = el("h2"); title.append(el("span", "paybadge", lbl), "Paiement " + lbl);
+      const stats = el("div", "month-stats");
+      stats.append(el("span", "pill " + (items.length ? "wait" : "ok"), items.length ? items.length + " en attente" : "Tout payé ✓"));
+      const late = items.filter(r => r.date < today).length;
+      if (late) stats.append(el("span", "pill tbdp", late + " examen" + (late > 1 ? "s" : "") + " déjà passé" + (late > 1 ? "s" : "")));
+      head.append(title, stats);
+      box.append(head);
+      if (items.length) {
+        const ul = el("div", "mrows");
+        items.forEach(r => ul.append(mrowEl(r, today, true, null, f)));
+        box.append(ul);
+      }
+      list.append(box);
+    });
+    if (!rows.length) { list.replaceChildren(); const e = el("div", "empty"); e.append(el("div", "big", "💶"), el("p", null, "Aucun examen pour l'instant.")); list.append(e); }
   }
 
   // ---------- vue « Par accompagnateur » ----------
@@ -333,9 +366,10 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   $("modeB").onclick = () => setMode("B");
   setMode(mode);
   $("tabLieu").onclick = () => setView("lieu");
+  $("tabPay").onclick = () => setView("pay");
   function setView(v) {
     view = v;
-    [["tabNext", "next"], ["tabPast", "past"], ["tabMonth", "month"], ["tabAcc", "acc"], ["tabLieu", "lieu"]].forEach(([id, k]) => $(id).setAttribute("aria-selected", String(v === k)));
+    [["tabNext", "next"], ["tabPast", "past"], ["tabMonth", "month"], ["tabAcc", "acc"], ["tabLieu", "lieu"], ["tabPay", "pay"]].forEach(([id, k]) => $(id).setAttribute("aria-selected", String(v === k)));
     render();
   }
 
