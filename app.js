@@ -107,6 +107,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     stats.append(el("span", "pill " + (unpaid ? "wait" : "ok"), unpaid ? unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : "Tout payé ✓"));
     head.append(title, stats);
     box.append(head);
+    box.append(accTotals(items));
     const ul = el("div", "mrows");
     items.forEach(r => ul.append(mrowEl(r, today, false)));
     box.append(ul);
@@ -131,6 +132,33 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     row.append(day, mid, dots);
     if (canWrite) { row.tabIndex = 0; row.onclick = () => openSheet(r); row.onkeydown = (e) => { if (e.key === "Enter") openSheet(r); }; }
     return row;
+  }
+
+  // Totaux : par accompagnateur (dans un mois) et par mois (pour un accompagnateur ou un lieu)
+  function accTotals(items) {
+    const line = el("div", "totals");
+    line.append(el("span", "totals-lbl", "Par accompagnateur :"));
+    const counts = new Map();
+    items.forEach(r => { const k = (r.accompagnateur && r.accompagnateur.trim()) || ""; counts.set(k, (counts.get(k) || 0) + 1); });
+    const order = ACCS.filter(a => counts.has(a)).concat([...counts.keys()].filter(k => k && !ACCS.includes(k)));
+    order.forEach(a => { const c = el("span", "tot"); c.append(avatar(a), a + " ", el("b", null, String(counts.get(a)))); line.append(c); });
+    if (counts.has("")) { const c = el("span", "tot tbd"); c.append("👤 À définir ", el("b", null, String(counts.get("")))); line.append(c); }
+    return line;
+  }
+  function appendByMonth(ul, items, today, parLieu) {
+    let cur = null;
+    items.forEach(r => {
+      const k = r.date.slice(0, 7);
+      if (k !== cur) {
+        cur = k;
+        const n = items.filter(x => x.date.slice(0, 7) === k).length;
+        const [y, m] = k.split("-").map(Number);
+        const h = el("div", "msep");
+        h.append(el("span", null, MONTHS_FULL[m - 1] + " " + y), el("b", null, n + " examen" + (n > 1 ? "s" : "")));
+        ul.append(h);
+      }
+      ul.append(mrowEl(r, today, true, parLieu));
+    });
   }
 
   // ---------- vue « Par accompagnateur » ----------
@@ -160,14 +188,14 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       box.append(head);
       if (next.length) {
         const ul = el("div", "mrows");
-        next.forEach(r => ul.append(mrowEl(r, today, true, parLieu)));
+        appendByMonth(ul, next, today, parLieu);
         box.append(ul);
       }
       if (past.length) {
         const d = el("details", "acc-past");
         d.append(el("summary", null, "Voir les examens passés (" + past.length + ")"));
         const ul = el("div", "mrows");
-        past.forEach(r => ul.append(mrowEl(r, today, true, parLieu)));
+        appendByMonth(ul, past, today, parLieu);
         d.append(ul);
         box.append(d);
       }
