@@ -60,10 +60,10 @@ async function main() {
     texte = `Tout fonctionne. Dans 2 jours (${quand}) : ${docs.length} examen(s), rien à compléter.`;
   } else { console.log('Rien à signaler.'); return; }
 
-  const r = await fetch(`https://ntfy.sh/${encodeURIComponent(NTFY_TOPIC)}`, {
-    method: 'POST',
-    headers: { Title: encodeURIComponent(titre), 'X-Title-Encoding': 'url', Tags: 'calendar,warning', Click: SITE, Priority: sansNom.length ? 'high' : 'default' },
-    body: texte,
+  // Envoi en JSON : accents et emojis passent correctement dans le titre.
+  const r = await fetch('https://ntfy.sh/', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ topic: NTFY_TOPIC, title: titre, message: texte, tags: ['calendar'], click: SITE, priority: sansNom.length ? 4 : 3 }),
   });
   if (!r.ok) throw new Error('Envoi de la notification impossible (' + r.status + ').');
   console.log('Notification envoyée.');
