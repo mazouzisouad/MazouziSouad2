@@ -18,7 +18,7 @@ service cloud.firestore {
       return d.keys().hasOnly(['eleve', 'accompagnateur', 'lieu', 'date', 'commentaire',
                                'payeW', 'payeB', 'payeS', 'payeWDate', 'payeBDate', 'payeSDate',
                                'creeLe', 'creePar', 'modifieLe'])
-        && d.eleve is string && d.eleve.size() > 0 && d.eleve.size() <= 80
+        && d.eleve is string && d.eleve.size() <= 80
         && d.date is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
         && texte(d, 'accompagnateur', 80) && texte(d, 'lieu', 120)
         && texte(d, 'commentaire', 300) && texte(d, 'creePar', 120);

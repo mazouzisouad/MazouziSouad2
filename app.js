@@ -19,6 +19,9 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   const daysUntil = (s) => Math.round((parse(s) - parse(todayStr())) / 86400000);
   const shortDate = (s) => { const [y, m, d] = s.split("-").map(Number); return d + " " + MONTHS[m - 1] + (y !== new Date().getFullYear() ? " " + y : ""); };
   const isDate = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+  const TBD = "Élève à définir";
+  const nameOf = (r) => (r.eleve && r.eleve.trim()) ? r.eleve : TBD;
+  const noName = (r) => !(r.eleve && r.eleve.trim());
   function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function colorFor(name) { const i = ACCS.indexOf(name); if (i >= 0) return COLORS[i]; let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COLORS[h % COLORS.length]; }
   function avatar(name) { const a = el("span", "avatar", (name || "?").charAt(0).toUpperCase()); a.style.background = colorFor(name || "?"); a.setAttribute("aria-hidden", "true"); return a; }
@@ -32,7 +35,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const past = rows.filter(r => r.date < today).sort((a, b) => b.date.localeCompare(a.date));
     const unpaid = rows.reduce((n, r) => n + PAYS.filter(([, f]) => r[f] !== true).length, 0);
     $("summary").textContent = (next.length === 0 ? "Aucun examen à venir" : next.length + " examen" + (next.length > 1 ? "s" : "") + " à venir")
-      + (rows.length ? (unpaid ? " · " + unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : " · tout est payé 🎉") : "");
+      + (rows.length ? (unpaid ? " · " + unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : " · tout est payé 🎉") : "")
+      + (next.filter(noName).length ? " · " + next.filter(noName).length + " sans nom" : "");
     list.replaceChildren();
     if (view === "month") { renderMonths(list, today); return; }
     const items = view === "next" ? next : past;
@@ -80,6 +84,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const unpaid = items.reduce((n, r) => n + PAYS.filter(([, f]) => r[f] !== true).length, 0);
     const stats = el("div", "month-stats");
     stats.append(el("span", "pill", items.length + " examen" + (items.length > 1 ? "s" : "")));
+    const sansNom = items.filter(noName).length;
+    if (sansNom) stats.append(el("span", "pill tbdp", sansNom + " sans nom"));
     stats.append(el("span", "pill " + (unpaid ? "wait" : "ok"), unpaid ? unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : "Tout payé ✓"));
     head.append(title, stats);
     box.append(head);
@@ -89,7 +95,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       const row = el("div", "mrow" + (r.date < today ? " past" : ""));
       const day = el("div", "mday"); day.append(el("b", null, String(d.getDate())), el("span", null, DAYS[d.getDay()]));
       const mid = el("div", "mmid");
-      mid.append(el("div", "mname", r.eleve));
+      mid.append(el("div", "mname" + (noName(r) ? " tbd" : ""), nameOf(r)));
       const sub = el("div", "msub");
       if (r.accompagnateur) { const a = el("span"); a.append(avatar(r.accompagnateur), r.accompagnateur); sub.append(a); }
       if (r.lieu) sub.append(el("span", null, "📍 " + r.lieu));
@@ -112,7 +118,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     day.append(el("div", "m", DAYS[d.getDay()]), el("div", "n", String(d.getDate())), el("div", "m", MONTHS[d.getMonth()]));
     const who = el("div", "who");
     const nr = el("div", "name-row");
-    nr.append(el("span", "name", r.eleve));
+    nr.append(el("span", "name" + (noName(r) ? " tbd" : ""), nameOf(r)));
     if (!isPast) {
       const n = daysUntil(r.date);
       nr.append(el("span", "count" + (n === 0 ? " today" : n <= 3 ? " hot" : ""), n === 0 ? "Aujourd'hui !" : n === 1 ? "Demain" : "J-" + n));
@@ -149,7 +155,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     try {
       await col.doc(r.id).update({ [field]: nowPaid, [field + "Date"]: nowPaid ? todayStr() : null });
       if (nowPaid) {
-        if (PAYS.every(([, f]) => f === field || r[f] === true)) { confetti(); toast("Tout est payé pour " + r.eleve + " 🎉"); }
+        if (PAYS.every(([, f]) => f === field || r[f] === true)) { confetti(); toast("Tout est payé pour " + nameOf(r) + " 🎉"); }
         else toast("Paiement " + field.slice(-1) + " noté ✓");
       }
     } catch (e) { toast("Le paiement n'a pas pu être enregistré"); }
@@ -182,10 +188,14 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     $("saveBtn").textContent = r ? "Enregistrer" : "Ajouter";
     $("delBtn").hidden = !r; $("delBtn").classList.remove("sure"); $("delBtn").textContent = "Supprimer";
     $("formMsg").textContent = "";
+    places = 1; $("placesField").hidden = !!r; $("placesN").textContent = "1";
     drawChips();
     $("overlay").hidden = false;
-    if (!r) setTimeout(() => $("eleve").focus(), 50);
+    if (r && noName(r)) setTimeout(() => $("eleve").focus(), 50);
   }
+  let places = 1;
+  $("placesMinus").onclick = () => { places = Math.max(1, places - 1); $("placesN").textContent = String(places); };
+  $("placesPlus").onclick = () => { places = Math.min(10, places + 1); $("placesN").textContent = String(places); };
   function closeSheet() { $("overlay").hidden = true; editingId = null; }
 
   $("fab").onclick = () => openSheet(null);
@@ -211,12 +221,21 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     e.preventDefault();
     if (!col) { $("formMsg").textContent = "Connectez-vous d'abord."; return; }
     const data = { eleve: $("eleve").value.trim(), accompagnateur: selAcc, lieu: selLieu, date: $("date").value, commentaire: $("commentaire").value.trim() };
-    const missing = [!data.eleve && "l'élève", !data.accompagnateur && "l'accompagnateur", !data.lieu && "le lieu", !data.date && "la date"].filter(Boolean);
+    const missing = [!data.accompagnateur && "l'accompagnateur", !data.lieu && "le lieu", !data.date && "la date"].filter(Boolean);
     if (missing.length) { $("formMsg").textContent = "Il manque " + missing.join(", ") + "."; return; }
     $("saveBtn").disabled = true;
     try {
       if (editingId) { await col.doc(editingId).update(Object.assign(data, { modifieLe: firebase.firestore.FieldValue.serverTimestamp() })); toast("Examen modifié ✓"); }
-      else { await col.add(Object.assign(data, { payeW: false, payeB: false, payeS: false, creeLe: firebase.firestore.FieldValue.serverTimestamp(), creePar: (auth.currentUser && auth.currentUser.email) || "" })); toast("Examen ajouté 🚗"); if (view === "past" && data.date >= todayStr()) setView("next"); }
+      else {
+        const base = Object.assign(data, { payeW: false, payeB: false, payeS: false, creeLe: firebase.firestore.FieldValue.serverTimestamp(), creePar: (auth.currentUser && auth.currentUser.email) || "" });
+        if (places > 1) {
+          const batch = fs.batch();
+          for (let i = 0; i < places; i++) batch.set(col.doc(), i === 0 ? base : Object.assign({}, base, { eleve: "" }));
+          await batch.commit();
+          toast(places + " places ajoutées 🚗");
+        } else { await col.add(base); toast(data.eleve ? "Examen ajouté 🚗" : "Place ajoutée, le nom viendra plus tard 🚗"); }
+        if (view === "past" && data.date >= todayStr()) setView("next");
+      }
       closeSheet();
     } catch (err) {
       if (err && /permission/i.test(err.code + " " + err.message)) $("formMsg").textContent = "Ce compte ne peut pas modifier la liste.";
