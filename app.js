@@ -205,11 +205,22 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     $("delBtn").hidden = !r; $("delBtn").classList.remove("sure"); $("delBtn").textContent = "Supprimer";
     $("formMsg").textContent = "";
     places = 1; $("placesField").hidden = !!r; $("placesN").textContent = "1";
+    $("addSameBtn").hidden = !r; sheetRow = r || null;
     drawChips();
     $("overlay").hidden = false;
     if (r && incomplet(r) && noName(r)) setTimeout(() => $("eleve").focus(), 50);
   }
-  let places = 1;
+  let places = 1, sheetRow = null;
+  // Nouvel élève au même examen : reprend la date, le lieu et l'accompagnateur
+  $("addSameBtn").onclick = () => {
+    const src = sheetRow; if (!src) return;
+    openSheet(null);
+    $("date").value = src.date; selLieu = src.lieu || ""; selAcc = src.accompagnateur || "";
+    drawChips();
+    const d = parse(src.date);
+    $("sheetTitle").textContent = "Nouvel élève le " + d.getDate() + " " + MONTHS[d.getMonth()] + (src.lieu ? " à " + src.lieu : "");
+    setTimeout(() => $("eleve").focus(), 50);
+  };
   $("placesMinus").onclick = () => { places = Math.max(1, places - 1); $("placesN").textContent = String(places); };
   $("placesPlus").onclick = () => { places = Math.min(10, places + 1); $("placesN").textContent = String(places); };
   function closeSheet() { $("overlay").hidden = true; editingId = null; }
