@@ -1,7 +1,7 @@
 # Dates d'examen
 
 Site privé (connexion par e-mail + mot de passe) pour suivre les examens :
-élève, accompagnateur, lieu, date, commentaire, paiement W et paiement B.
+élève, accompagnateur, lieu, date, commentaire, paiements W, B et S.
 
 Mise en route : voir [INSTALLATION.md](INSTALLATION.md).
 

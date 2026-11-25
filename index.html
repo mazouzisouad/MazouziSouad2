@@ -61,11 +61,13 @@ button:focus-visible, input:focus-visible, .card:focus-visible { outline: 3px so
 .tags > span { display: inline-flex; align-items: center; gap: 6px }
 .avatar { width: 24px; height: 24px; border-radius: 50%; display: inline-grid; place-items: center; color: #fff; font-size: 12px; font-weight: 800; flex: none }
 .note { font-size: 14px; color: var(--muted); background: var(--bg); border-radius: 12px; padding: 8px 12px; overflow-wrap: anywhere; white-space: pre-line }
-.pays { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
-.pay { border: 2px solid var(--unpaid); background: transparent; color: var(--unpaid); border-radius: 16px; padding: 10px 8px;
+.pays { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.pay { border: 2px solid var(--unpaid); background: transparent; color: var(--unpaid); border-radius: 16px; padding: 8px 4px; min-width: 0;
   display: grid; text-align: center; transition: transform .12s }
 .pay:active { transform: scale(.96) }
-.pay .lbl { font-family: var(--f-display); font-size: 18px; font-weight: 700 }
+.pay .lbl { font-family: var(--f-display); font-size: 24px; font-weight: 700; line-height: 1.1 }
+.pays-title { font-size: 13px; font-weight: 800; color: var(--muted); margin-bottom: -6px }
+.pay .when { font-size: 12px; font-weight: 700; opacity: .9 }
 .pay .st { font-size: 13px; font-weight: 800 }
 .pay.paid { background: var(--paid); border-color: var(--paid); color: #fff }
 .pay:disabled { cursor: default }
@@ -185,6 +187,7 @@ html, body { margin: 0 }
 (function () {
   const $ = (id) => document.getElementById(id);
   const ACCS = ["Towfiq", "Manel", "Monim", "Selim", "Walid", "Selma"];
+  const PAYS = [["W", "payeW"], ["B", "payeB"], ["S", "payeS"]];
   const LIEUX = ["Gennevilliers", "Noisy", "Bobigny"];
   const COLORS = ["#ef4444", "#f59e0b", "#10b981", "#0ea5e9", "#8b5cf6", "#ec4899", "#14b8a6", "#64748b"];
   const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
@@ -209,7 +212,7 @@ html, body { margin: 0 }
     const today = todayStr();
     const next = rows.filter(r => r.date >= today).sort((a, b) => a.date.localeCompare(b.date));
     const past = rows.filter(r => r.date < today).sort((a, b) => b.date.localeCompare(a.date));
-    const unpaid = rows.reduce((n, r) => n + (r.payeW === true ? 0 : 1) + (r.payeB === true ? 0 : 1), 0);
+    const unpaid = rows.reduce((n, r) => n + PAYS.filter(([, f]) => r[f] !== true).length, 0);
     $("summary").textContent = (next.length === 0 ? "Aucun examen à venir" : next.length + " examen" + (next.length > 1 ? "s" : "") + " à venir")
       + (rows.length ? (unpaid ? " · " + unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : " · tout est payé 🎉") : "");
     const items = view === "next" ? next : past;
@@ -245,18 +248,19 @@ html, body { margin: 0 }
     c.append(top);
     if (typeof r.commentaire === "string" && r.commentaire.trim()) c.append(el("div", "note", "💬 " + r.commentaire));
     const pays = el("div", "pays");
-    [["W", "payeW"], ["B", "payeB"]].forEach(([lbl, field]) => {
+    PAYS.forEach(([lbl, field]) => {
       const paid = r[field] === true;
       const b = el("button", "pay" + (paid ? " paid" : ""));
       b.type = "button";
       const pd = r[field + "Date"];
-      b.append(el("span", "lbl", "Paiement " + lbl), el("span", "st", paid ? "✓ Payé" + (isDate(pd) ? " le " + shortDate(pd) : "") : "Pas encore payé"));
+      b.append(el("span", "lbl", lbl), el("span", "st", paid ? "✓ Payé" : "Pas payé"));
+      if (paid && isDate(pd)) b.append(el("span", "when", "le " + shortDate(pd)));
       b.setAttribute("aria-pressed", paid ? "true" : "false");
       b.disabled = !canWrite;
       b.onclick = (e) => { e.stopPropagation(); togglePay(r, field); };
       pays.append(b);
     });
-    c.append(pays);
+    c.append(el("div", "pays-title", "Paiements"), pays);
     if (canWrite) { c.tabIndex = 0; c.onclick = () => openSheet(r); c.onkeydown = (e) => { if (e.key === "Enter" && e.target === c) openSheet(r); }; }
     return c;
   }
@@ -268,8 +272,7 @@ html, body { margin: 0 }
     try {
       await col.doc(r.id).update({ [field]: nowPaid, [field + "Date"]: nowPaid ? todayStr() : null });
       if (nowPaid) {
-        const other = field === "payeW" ? "payeB" : "payeW";
-        if (r[other] === true) { confetti(); toast("Tout est payé pour " + r.eleve + " 🎉"); }
+        if (PAYS.every(([, f]) => f === field || r[f] === true)) { confetti(); toast("Tout est payé pour " + r.eleve + " 🎉"); }
         else toast("Paiement " + field.slice(-1) + " noté ✓");
       }
     } catch (e) { toast("Le paiement n'a pas pu être enregistré"); }
@@ -331,7 +334,7 @@ html, body { margin: 0 }
     $("saveBtn").disabled = true;
     try {
       if (editingId) { await col.doc(editingId).update(Object.assign(data, { modifieLe: firebase.firestore.FieldValue.serverTimestamp() })); toast("Examen modifié ✓"); }
-      else { await col.add(Object.assign(data, { payeW: false, payeB: false, creeLe: firebase.firestore.FieldValue.serverTimestamp(), creePar: (auth.currentUser && auth.currentUser.email) || "" })); toast("Examen ajouté 🚗"); if (data.date >= todayStr()) setView("next"); }
+      else { await col.add(Object.assign(data, { payeW: false, payeB: false, payeS: false, creeLe: firebase.firestore.FieldValue.serverTimestamp(), creePar: (auth.currentUser && auth.currentUser.email) || "" })); toast("Examen ajouté 🚗"); if (data.date >= todayStr()) setView("next"); }
       closeSheet();
     } catch (err) {
       if (err && /permission/i.test(err.code + " " + err.message)) $("formMsg").textContent = "Ce compte ne peut pas modifier la liste.";

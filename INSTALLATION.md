@@ -4,7 +4,7 @@
  (≈ 15 minutes, gratuit)
 
 Site privé pour suivre les dates d'examen : élève, accompagnateur, lieu, date, commentaire,
-paiement W et paiement B (avec la date du paiement). Connexion par e-mail + mot de passe.
+paiements W, B et S (avec la date du paiement). Connexion par e-mail + mot de passe.
 
 ## 1. Mettre le site en ligne (GitHub Pages)
 
