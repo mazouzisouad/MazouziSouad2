@@ -56,7 +56,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     }
     list.replaceChildren();
     if (view === "month") { renderMonths(list, today); return; }
-    if (view === "acc") { renderAccs(list, today); return; }
+    if (view === "acc") { renderAccs(list, today, false); return; }
+    if (view === "lieu") { renderAccs(list, today, true); return; }
     const items = view === "next" ? next : past;
     if (!items.length) {
       const e = el("div", "empty");
@@ -112,7 +113,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     return box;
   }
 
-  function mrowEl(r, today, byAcc) {
+  function mrowEl(r, today, byAcc, byLieu) {
     const d = parse(r.date);
     const row = el("div", "mrow" + (r.date < today ? " past" : ""));
     const day = el("div", "mday");
@@ -122,7 +123,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const sub = el("div", "msub");
     if (byAcc) sub.append(el("span", null, DAYS[d.getDay()] + " " + d.getDate() + " " + MONTHS[d.getMonth()] + " " + d.getFullYear()));
     else if (r.accompagnateur) { const a = el("span"); a.append(avatar(r.accompagnateur), r.accompagnateur); sub.append(a); } else sub.append(el("span", "tbd", "👤 À définir"));
-    if (r.lieu) sub.append(el("span", null, "📍 " + r.lieu));
+    if (byLieu) { if (r.accompagnateur) { const a = el("span"); a.append(avatar(r.accompagnateur), r.accompagnateur); sub.append(a); } else sub.append(el("span", "tbd", "👤 À définir")); }
+    else if (r.lieu) sub.append(el("span", null, "📍 " + r.lieu));
     mid.append(sub);
     const dots = el("div", "mdots");
     PAYS.forEach(([lbl, f]) => { const t = el("span", "mdot" + (r[f] === true ? " paid" : ""), lbl); t.title = "Paiement " + lbl + (r[f] === true ? " : payé" : " : pas payé"); dots.append(t); });
@@ -132,23 +134,25 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   }
 
   // ---------- vue « Par accompagnateur » ----------
-  function renderAccs(list, today) {
+  function renderAccs(list, today, parLieu) {
     if (!rows.length) {
-      const e = el("div", "empty"); e.append(el("div", "big", "👥"), el("p", null, "Aucun examen pour l'instant."));
+      const e = el("div", "empty"); e.append(el("div", "big", parLieu ? "📍" : "👥"), el("p", null, "Aucun examen pour l'instant."));
       list.append(e); return;
     }
-    const names = ACCS.slice();
-    rows.forEach(r => { if (r.accompagnateur && !names.includes(r.accompagnateur)) names.push(r.accompagnateur); });
-    const groups = names.map(n => [n, rows.filter(r => r.accompagnateur === n)]);
-    const sansAcc = rows.filter(noAcc);
-    if (sansAcc.length) groups.push(["", sansAcc]);
+    const champ = parLieu ? "lieu" : "accompagnateur";
+    const names = (parLieu ? LIEUX : ACCS).slice();
+    rows.forEach(r => { if (r[champ] && !names.includes(r[champ])) names.push(r[champ]); });
+    const groups = names.map(n => [n, rows.filter(r => r[champ] === n)]);
+    const sans = rows.filter(r => !(r[champ] && r[champ].trim()));
+    if (sans.length) groups.push(["", sans]);
     groups.forEach(([name, items]) => {
       const next = items.filter(r => r.date >= today).sort((a, b) => a.date.localeCompare(b.date));
       const past = items.filter(r => r.date < today).sort((a, b) => b.date.localeCompare(a.date));
       const box = el("section", "month acc-box");
       const head = el("div", "month-head");
       const title = el("h2");
-      if (name) title.append(avatar(name), name); else title.append(el("span", "tbd", "👤 À définir"));
+      if (name) { if (parLieu) title.append("📍 " + name); else title.append(avatar(name), name); }
+      else title.append(el("span", "tbd", parLieu ? "📍 Lieu à définir" : "👤 À définir"));
       const stats = el("div", "month-stats");
       stats.append(el("span", "pill", next.length ? next.length + " à venir" : "Aucun à venir"));
       if (past.length) stats.append(el("span", "pill", past.length + " passé" + (past.length > 1 ? "s" : "")));
@@ -156,14 +160,14 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       box.append(head);
       if (next.length) {
         const ul = el("div", "mrows");
-        next.forEach(r => ul.append(mrowEl(r, today, true)));
+        next.forEach(r => ul.append(mrowEl(r, today, true, parLieu)));
         box.append(ul);
       }
       if (past.length) {
         const d = el("details", "acc-past");
         d.append(el("summary", null, "Voir les examens passés (" + past.length + ")"));
         const ul = el("div", "mrows");
-        past.forEach(r => ul.append(mrowEl(r, today, true)));
+        past.forEach(r => ul.append(mrowEl(r, today, true, parLieu)));
         d.append(ul);
         box.append(d);
       }
@@ -278,9 +282,10 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   $("tabPast").onclick = () => setView("past");
   $("tabMonth").onclick = () => setView("month");
   $("tabAcc").onclick = () => setView("acc");
+  $("tabLieu").onclick = () => setView("lieu");
   function setView(v) {
     view = v;
-    [["tabNext", "next"], ["tabPast", "past"], ["tabMonth", "month"], ["tabAcc", "acc"]].forEach(([id, k]) => $(id).setAttribute("aria-selected", String(v === k)));
+    [["tabNext", "next"], ["tabPast", "past"], ["tabMonth", "month"], ["tabAcc", "acc"], ["tabLieu", "lieu"]].forEach(([id, k]) => $(id).setAttribute("aria-selected", String(v === k)));
     render();
   }
 

@@ -157,7 +157,7 @@ html, body { margin: 0 }
 .banner { background: var(--unpaid); color: #fff; font-weight: 800; border-radius: 16px; padding: 12px 16px }
 .btn.addsame { border: 2px dashed var(--primary); color: var(--primary); background: transparent; width: 100% }
 .tabs { max-width: 100%; flex-wrap: wrap; border-radius: 22px }
-@media (max-width: 560px) { .tabs { display: grid; grid-template-columns: 1fr 1fr; width: 100% } .tab { text-align: center } }
+@media (max-width: 560px) { .tabs { display: grid; grid-template-columns: 1fr 1fr; width: 100% } .tab { text-align: center } #tabAcc { grid-column: 1 / -1 } }
 .tab { white-space: nowrap; flex: none }
 .wrap > * { min-width: 0 }
 header, header > * { min-width: 0 }
@@ -201,6 +201,7 @@ header .tabs { align-self: flex-start }
       <button class="tab" role="tab" id="tabNext" aria-selected="true">À venir</button>
       <button class="tab" role="tab" id="tabPast" aria-selected="false">Passés</button>
       <button class="tab" role="tab" id="tabMonth" aria-selected="false">Par mois</button>
+      <button class="tab" role="tab" id="tabLieu" aria-selected="false">Par lieu</button>
       <button class="tab" role="tab" id="tabAcc" aria-selected="false">Accompagnateurs</button>
     </div>
   </header>
