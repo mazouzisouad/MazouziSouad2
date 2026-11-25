@@ -1,22 +1,13 @@
 rules_version = '2';
 
 // Règles de sécurité du site « Dates d'examen ».
-// Seules les adresses e-mail de la liste ci-dessous peuvent lire et modifier les examens.
-// → Remplacez les e-mails d'exemple par les vrais (un par personne qui a accès).
-//   Pour donner l'accès à quelqu'un : ajoutez son e-mail ici (puis « Publier »)
-//   et créez son compte dans Firebase → Authentication → Utilisateurs.
+// Seules les personnes qui ont un compte (créé par vous dans Firebase → Authentication
+// → Utilisateurs) peuvent lire et modifier les examens.
+// L'inscription libre est désactivée (Authentication → Paramètres → Actions des utilisateurs).
 service cloud.firestore {
   match /databases/{database}/documents {
-    function autorise() {
-      return request.auth != null
-        && request.auth.token.email != null
-        && request.auth.token.email.lower() in [
-          'personne1@exemple.fr',
-          'personne2@exemple.fr'
-        ];
-    }
     match /dates_examen/{id} {
-      allow read, write: if autorise();
+      allow read, write: if request.auth != null;
     }
   }
 }

@@ -398,7 +398,9 @@ html, body { margin: 0 }
       const c = (err && err.code) || "";
       $("loginMsg").textContent = /wrong-password|invalid-credential|user-not-found|invalid-login/.test(c) ? "E-mail ou mot de passe incorrect."
         : /too-many-requests/.test(c) ? "Trop d'essais. Réessayez dans quelques minutes."
-        : /network/.test(c) ? "Pas de connexion internet." : "Connexion impossible. Réessayez.";
+        : /network/.test(c) ? "Pas de connexion internet."
+        : /unauthorized-domain/.test(c) ? "Ce site n'est pas autorisé dans Firebase (Authentication → Paramètres → Domaines autorisés)."
+        : /user-disabled/.test(c) ? "Ce compte a été désactivé." : "Connexion impossible. Réessayez.";
     } finally { $("loginBtn").disabled = false; }
   });
   $("forgotBtn").onclick = async () => {
