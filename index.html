@@ -282,6 +282,19 @@ body { font-weight: 600 !important; font-size: 17px !important }
 .okline { color: var(--paid) !important; font-weight: 700 }
 .hint { color: var(--muted); margin: 0 }
 .redo-list .mrow.past { opacity: 1 }
+
+/* Recherche d'élève */
+.searchbar { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 4px 6px 4px 14px; margin-top: 14px }
+.searchbar:focus-within { border-color: var(--fg) }
+.searchbar input { flex: 1; min-width: 0; border: none; background: transparent; font: inherit; font-size: 17px; font-weight: 600; color: var(--fg); padding: 10px 0; outline: none }
+.searchbar input::-webkit-search-cancel-button { display: none }
+.clearbtn { border: none; background: var(--line); color: var(--fg); width: 32px; height: 32px; border-radius: 50%; font-size: 20px; line-height: 1; cursor: pointer }
+.kind { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; color: var(--muted) }
+.koline { color: var(--unpaid) !important; font-weight: 700 }
+.nextline { color: var(--fg) !important; font-weight: 700 }
+.search-list .mrow.past { opacity: 1 }
+.search-list .mname { display: none }
+.pill.nextp { background: var(--fg) !important; color: var(--bg) !important }
 </style>
 
 </head>
@@ -318,6 +331,11 @@ body { font-weight: 600 !important; font-size: 17px !important }
       </div>
       <h1 id="appTitle">Dates d'examen <span class="car" aria-hidden="true">🚗</span></h1>
       <p class="summary" id="summary">Chargement…</p>
+      <div class="searchbar">
+        <span aria-hidden="true">🔍</span>
+        <input id="search" type="search" placeholder="Chercher un élève…" autocomplete="off" aria-label="Chercher un élève">
+        <button type="button" id="searchClear" class="clearbtn" aria-label="Effacer la recherche" hidden>×</button>
+      </div>
     </div>
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" id="tabNext" aria-selected="true">À venir</button>

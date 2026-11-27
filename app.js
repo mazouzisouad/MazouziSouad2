@@ -65,6 +65,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       ban.textContent = "⚠️ Examens à compléter d'ici 2 jours (le 1er : " + quand + ") : " + manque(bientot).join(", ") + ". Pensez à les remplir !";
     }
     list.replaceChildren();
+    if (norm($("search").value)) { renderSearch(list, today); return; }
     if (view === "month") { renderMonths(list, today); return; }
     if (view === "acc") { renderAccs(list, today, false); return; }
     if (view === "lieu") { renderAccs(list, today, true); return; }
@@ -182,6 +183,45 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
         ul.append(h);
       }
       ul.append(mrowEl(r, today, true, parLieu));
+    });
+  }
+
+  // ---------- recherche d'un élève (dans les 2 carnets) ----------
+  function renderSearch(list, today) {
+    const q = norm($("search").value);
+    const found = allRows.filter(r => norm(r.eleve).includes(q));
+    if (!found.length) {
+      const e = el("div", "empty"); e.append(el("div", "big", "🔍"), el("p", null, "Aucun élève trouvé pour « " + $("search").value.trim() + " »."));
+      list.append(e); return;
+    }
+    const groups = new Map();
+    found.forEach(r => { const k = norm(r.eleve); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
+    [...groups.values()].sort((a, b) => a[0].eleve.localeCompare(b[0].eleve)).forEach(items => {
+      items.sort((a, b) => a.date.localeCompare(b.date));
+      const box = el("section", "month");
+      const head = el("div", "month-head");
+      head.append(el("h2", null, items[0].eleve));
+      const stats = el("div", "month-stats");
+      const nR = items.filter(x => x.resultat === "reussi").length, nE = items.filter(x => x.resultat === "echec").length;
+      const next = items.find(x => x.date >= today);
+      if (next) { const n = daysUntil(next.date); stats.append(el("span", "pill nextp", n === 0 ? "Examen aujourd'hui" : n === 1 ? "Examen demain" : "Prochain dans " + n + " j")); }
+      if (nR) stats.append(el("span", "pill res-ok", nR + " réussi" + (nR > 1 ? "s" : "")));
+      if (nE) stats.append(el("span", "pill res-ko", nE + " échec" + (nE > 1 ? "s" : "")));
+      if (!next && !nR && !nE) stats.append(el("span", "pill", "Aucun examen à venir"));
+      head.append(stats);
+      box.append(head);
+      const ul = el("div", "mrows search-list");
+      items.forEach(r => {
+        const row = mrowEl(r, today, true, null);
+        const sub = row.querySelector(".msub");
+        sub.prepend(el("span", "kind" + (r.type === "B" ? " b" : ""), r.type === "B" ? "Date B" : "Examen"));
+        if (r.resultat) sub.append(el("span", r.resultat === "reussi" ? "okline" : "koline", r.resultat === "reussi" ? "✓ Réussi" : "✗ Échec"));
+        else if (r.date >= today) { const n = daysUntil(r.date); sub.append(el("span", "nextline", n === 0 ? "Aujourd'hui" : n === 1 ? "Demain" : "Dans " + n + " jours")); }
+        else sub.append(el("span", "tbd", "Résultat non noté"));
+        ul.append(row);
+      });
+      box.append(ul);
+      list.append(box);
     });
   }
 
@@ -453,7 +493,11 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   $("tabLieu").onclick = () => setView("lieu");
   $("tabPay").onclick = () => setView("pay");
   $("tabRedo").onclick = () => setView("redo");
+  $("search").addEventListener("input", () => { $("searchClear").hidden = !$("search").value; render(); });
+  $("searchClear").onclick = () => { $("search").value = ""; $("searchClear").hidden = true; render(); $("search").focus(); };
+  function setViewClear(v) { if ($("search").value) { $("search").value = ""; $("searchClear").hidden = true; } }
   function setView(v) {
+    setViewClear(v);
     view = v;
     [["tabNext", "next"], ["tabPast", "past"], ["tabMonth", "month"], ["tabAcc", "acc"], ["tabLieu", "lieu"], ["tabPay", "pay"], ["tabRedo", "redo"]].forEach(([id, k]) => $(id).setAttribute("aria-selected", String(v === k)));
     render();
