@@ -314,6 +314,16 @@ body { font-weight: 600 !important; font-size: 17px !important }
 .past-months .datebox { margin-top: 10px }
 @media (max-width: 560px) { .datebox > summary { grid-template-columns: 1fr } .dright { justify-content: flex-start } }
 .version { text-align: center; color: var(--muted); font-size: 12px; margin: 24px 0 0 }
+
+/* Déplier / replier dans tous les onglets */
+details.fold > summary { list-style: none; cursor: pointer; position: relative; padding-right: 34px }
+details.fold > summary::-webkit-details-marker { display: none }
+details.fold > summary .chev { position: absolute; right: 0; top: 4px; font-size: 18px; transition: transform .2s }
+details.fold[open] > summary .chev { transform: rotate(180deg) }
+details.fold:not([open]) { padding-bottom: 14px }
+.datebox.cards .dcards { display: grid; gap: 12px; padding: 12px }
+.datebox.cards .card { box-shadow: none !important }
+.list { gap: 14px }
 </style>
 
 </head>
@@ -369,7 +379,7 @@ body { font-weight: 600 !important; font-size: 17px !important }
   </header>
   <div class="banner" id="banner" role="status" hidden></div>
   <div class="list" id="list"></div>
-  <p class="version">Version du 27 nov. · onglet « Par date »</p>
+  <p class="version">Version du 27 nov. · déplier / replier partout</p>
 </div>
 </div>
 

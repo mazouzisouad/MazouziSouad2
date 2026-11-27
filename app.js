@@ -46,6 +46,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
 
   function render() {
     if (!loaded) return;
+    curKeys = [];
     updateRedoTab();
     const list = $("list");
     const today = todayStr();
@@ -80,7 +81,10 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       list.append(e);
       return;
     }
-    items.forEach(r => list.append(card(r, r.date < today)));
+    foldTools(list);
+    const byD = new Map();
+    items.forEach(r => { if (!byD.has(r.date)) byD.set(r.date, []); byD.get(r.date).push(r); });
+    [...byD.keys()].forEach(d => list.append(dateBox(d, byD.get(d), today, true, true)));
   }
 
   // ---------- vue « Par mois » ----------
@@ -100,11 +104,12 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const keys = [...groups.keys()];
     const coming = keys.filter(k => k >= curMonth);
     const gone = keys.filter(k => k < curMonth).reverse();
-    coming.forEach(k => list.append(monthBox(k, groups.get(k), today, k === curMonth)));
+    foldTools(list);
+    coming.forEach((k, i) => list.append(fold(monthBox(k, groups.get(k), today, k === curMonth), "m" + k, i < 2)));
     if (gone.length) {
       const d = el("details", "past-months");
       d.append(el("summary", null, "Mois passés (" + gone.length + ")"));
-      gone.forEach(k => d.append(monthBox(k, groups.get(k), today, false)));
+      gone.forEach(k => d.append(fold(monthBox(k, groups.get(k), today, false), "m" + k, false)));
       list.append(d);
     }
   }
@@ -187,13 +192,39 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     });
   }
 
+  // ---------- déplier / replier (dans tous les onglets) ----------
+  const foldState = new Map(); let curKeys = [];
+  const fkey = (k) => mode + "|" + view + "|" + k;
+  function track(det, k, def) {
+    const key = fkey(k); curKeys.push(key);
+    det.open = foldState.has(key) ? foldState.get(key) : def;
+    det.addEventListener("toggle", () => foldState.set(key, det.open));
+    return det;
+  }
+  // Transforme un cadre (titre + contenu) en cadre qui se déplie / se replie
+  function fold(box, k, def) {
+    const det = el("details", box.className + " fold");
+    const sum = el("summary");
+    const head = box.firstChild;
+    sum.append(head, el("span", "chev", "▾"));
+    det.append(sum);
+    while (box.firstChild) det.append(box.firstChild);
+    return track(det, k, def);
+  }
+  function foldTools(list) {
+    const bar = el("div", "dtools");
+    const openAll = el("button", "linkbtn", "Tout déplier"); openAll.type = "button";
+    openAll.onclick = () => { curKeys.forEach(k => foldState.set(k, true)); render(); };
+    const closeAll = el("button", "linkbtn", "Tout replier"); closeAll.type = "button";
+    closeAll.onclick = () => { curKeys.forEach(k => foldState.set(k, false)); render(); };
+    bar.append(openAll, closeAll);
+    list.append(bar);
+  }
+
   // ---------- vue « Par date » : chaque date se déplie / se replie ----------
-  const openDates = new Set(); let datesInit = false;
-  function dateBox(date, items, today) {
+  function dateBox(date, items, today, def, asCards) {
     const d = parse(date);
-    const det = el("details", "datebox" + (date < today ? " past" : ""));
-    det.open = openDates.has(date);
-    det.addEventListener("toggle", () => { if (det.open) openDates.add(date); else openDates.delete(date); });
+    const det = track(el("details", "datebox" + (date < today ? " past" : "") + (asCards ? " cards" : "")), "d" + date, def);
     const sum = el("summary");
     const left = el("div", "dleft");
     const jour = DAYS[d.getDay()];
@@ -209,9 +240,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (inc) right.append(el("span", "pill tbdp", inc + " à compléter"));
     sum.append(left, right, el("span", "chev", "▾"));
     det.append(sum);
-    const ul = el("div", "mrows");
-    items.forEach(r => ul.append(mrowEl(r, today, false)));
-    det.append(ul);
+    if (asCards) { const wrapc = el("div", "dcards"); items.forEach(r => wrapc.append(card(r, r.date < today))); det.append(wrapc); }
+    else { const ul = el("div", "mrows"); items.forEach(r => ul.append(mrowEl(r, today, false))); det.append(ul); }
     return det;
   }
   function renderDates(list, today) {
@@ -220,20 +250,13 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     rows.slice().sort((a, b) => a.date.localeCompare(b.date) || (a.eleve || "").localeCompare(b.eleve || "")).forEach(r => { if (!by.has(r.date)) by.set(r.date, []); by.get(r.date).push(r); });
     const dates = [...by.keys()];
     const next = dates.filter(d => d >= today), past = dates.filter(d => d < today).reverse();
-    if (!datesInit && next.length) { openDates.add(next[0]); datesInit = true; }
-    const bar = el("div", "dtools");
-    const openAll = el("button", "linkbtn", "Tout déplier"); openAll.type = "button";
-    openAll.onclick = () => { dates.forEach(d => openDates.add(d)); render(); };
-    const closeAll = el("button", "linkbtn", "Tout replier"); closeAll.type = "button";
-    closeAll.onclick = () => { openDates.clear(); render(); };
-    bar.append(openAll, closeAll);
-    list.append(bar);
-    next.forEach(d => list.append(dateBox(d, by.get(d), today)));
+    foldTools(list);
+    next.forEach((d, i) => list.append(dateBox(d, by.get(d), today, i === 0)));
     if (!next.length) list.append(el("p", "hint", "Aucune date à venir."));
     if (past.length) {
       const pd = el("details", "past-months");
       pd.append(el("summary", null, "Dates passées (" + past.length + ")"));
-      past.forEach(d => pd.append(dateBox(d, by.get(d), today)));
+      past.forEach(d => pd.append(dateBox(d, by.get(d), today, false)));
       list.append(pd);
     }
   }
@@ -340,6 +363,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
 
   // ---------- vue « Paiements en attente » ----------
   function renderPay(list, today) {
+    foldTools(list);
     const pays = mode === "B" ? PAYS_B : PAYS;
     let total = 0;
     pays.forEach(([lbl, f]) => {
@@ -359,13 +383,14 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
         items.forEach(r => ul.append(mrowEl(r, today, true, null, f)));
         box.append(ul);
       }
-      list.append(box);
+      list.append(fold(box, "p" + lbl, true));
     });
     if (!rows.length) { list.replaceChildren(); const e = el("div", "empty"); e.append(el("div", "big", "💶"), el("p", null, "Aucun examen pour l'instant.")); list.append(e); }
   }
 
   // ---------- vue « Par accompagnateur » ----------
   function renderAccs(list, today, parLieu) {
+    if (rows.length) foldTools(list);
     if (!rows.length) {
       const e = el("div", "empty"); e.append(el("div", "big", parLieu ? "📍" : "👥"), el("p", null, "Aucun examen pour l'instant."));
       list.append(e); return;
@@ -402,7 +427,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
         d.append(ul);
         box.append(d);
       }
-      list.append(box);
+      list.append(fold(box, (parLieu ? "l" : "a") + name, true));
     });
   }
 
