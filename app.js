@@ -56,7 +56,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const today = todayStr();
     const next = rows.filter(r => r.date >= today).sort((a, b) => a.date.localeCompare(b.date));
     const past = rows.filter(r => r.date < today).sort((a, b) => b.date.localeCompare(a.date));
-    const unpaid = rows.filter(r => paysOf(r).some(([, f]) => r[f] !== true)).length; // élèves qui n'ont pas tout payé
+    const unpaid = rows.filter(r => r.payeS !== true).length; // élèves dont le paiement S n'est pas fait
     $("summary").textContent = (next.length === 0 ? (mode === "B" ? "Aucune date B à venir" : "Aucun examen à venir") : noun(next.length) + " à venir")
       + (rows.length ? (unpaid ? " · " + unpaid + " élève" + (unpaid > 1 ? "s" : "") + " à payer" : " · tout est payé 🎉") : "")
       + manque(next).map(x => " · " + x).join("");
@@ -123,7 +123,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const head = el("div", "month-head");
     const title = el("h2", null, MONTHS_FULL[m - 1] + " " + y);
     if (isCurrent) title.append(el("span", "now", "Ce mois-ci"));
-    const unpaid = items.filter(r => paysOf(r).some(([, f]) => r[f] !== true)).length; // élèves qui n'ont pas tout payé
+    const unpaid = items.filter(r => r.payeS !== true).length; // élèves dont le paiement S n'est pas fait
     const stats = el("div", "month-stats");
     stats.append(el("span", "pill", noun(items.length)));
     manque(items).forEach(x => stats.append(el("span", "pill tbdp", x)));
@@ -238,7 +238,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const right = el("div", "dright");
     right.append(el("span", "dcount", items.length + " élève" + (items.length > 1 ? "s" : "")));
     if (date >= today) { const n = daysUntil(date); right.append(el("span", "pill nextp", n === 0 ? "Aujourd'hui" : n === 1 ? "Demain" : "J-" + n)); }
-    const unpaid = items.filter(r => paysOf(r).some(([, f]) => r[f] !== true)).length; // élèves qui n'ont pas tout payé
+    const unpaid = items.filter(r => r.payeS !== true).length; // élèves dont le paiement S n'est pas fait
     if (unpaid) right.append(el("span", "pill res-ko", unpaid + " élève" + (unpaid > 1 ? "s" : "") + " à payer"));
     const inc = items.filter(incomplet).length;
     if (inc) right.append(el("span", "pill tbdp", inc + " à compléter"));
