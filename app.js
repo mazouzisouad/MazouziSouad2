@@ -7,6 +7,10 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   const ACCS = ["Towfiq", "Manel", "Monim", "Selim", "Walid", "Selma"];
   const PAYS = [["W", "payeW"], ["B", "payeB"], ["S", "payeS"]];
   const PAYS_B = [["S", "payeS"]];
+  // Accompagnateurs classés par nombre d'examens (celui qui en fait le plus en premier)
+  function accCounts() { const c = new Map(); ACCS.forEach(a => c.set(a, 0)); rows.forEach(r => { const a = (r.accompagnateur || "").trim(); if (a) c.set(a, (c.get(a) || 0) + 1); }); return c; }
+  function accsSorted() { const c = accCounts(); return [...c.keys()].sort((a, b) => c.get(b) - c.get(a) || (ACCS.indexOf(a) < 0 ? 99 : ACCS.indexOf(a)) - (ACCS.indexOf(b) < 0 ? 99 : ACCS.indexOf(b))); }
+  function accRank(a) { return accsSorted().indexOf(a); }
   const paysOf = (r) => r.type === "B" ? PAYS_B : PAYS;
   // Deux carnets : les examens et les « dates B » (même fonctionnement, paiement S seulement)
   let mode = "exam";
@@ -171,7 +175,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     line.append(el("span", "totals-lbl", "Par accompagnateur :"));
     const counts = new Map();
     items.forEach(r => { const k = (r.accompagnateur && r.accompagnateur.trim()) || ""; counts.set(k, (counts.get(k) || 0) + 1); });
-    const order = ACCS.filter(a => counts.has(a)).concat([...counts.keys()].filter(k => k && !ACCS.includes(k)));
+    const order = [...counts.keys()].filter(Boolean).sort((a, b) => counts.get(b) - counts.get(a) || accRank(a) - accRank(b));
     order.forEach(a => { const c = el("span", "tot"); c.append(avatar(a), a + " ", el("b", null, String(counts.get(a)))); line.append(c); });
     if (counts.has("")) { const c = el("span", "tot tbd"); c.append("👤 À définir ", el("b", null, String(counts.get("")))); line.append(c); }
     return line;
@@ -396,7 +400,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       list.append(e); return;
     }
     const champ = parLieu ? "lieu" : "accompagnateur";
-    const names = (parLieu ? LIEUX : ACCS).slice();
+    const names = (parLieu ? LIEUX : accsSorted()).slice();
     rows.forEach(r => { if (r[champ] && !names.includes(r[champ])) names.push(r[champ]); });
     const groups = names.map(n => [n, rows.filter(r => r[champ] === n)]);
     const sans = rows.filter(r => !(r[champ] && r[champ].trim()));
@@ -410,6 +414,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       if (name) { if (parLieu) title.append("📍 " + name); else title.append(avatar(name), name); }
       else title.append(el("span", "tbd", parLieu ? "📍 Lieu à définir" : "👤 À définir"));
       const stats = el("div", "month-stats");
+      if (!parLieu && name) stats.append(el("span", "pill nextp", items.length + " au total"));
       stats.append(el("span", "pill", next.length ? next.length + " à venir" : "Aucun à venir"));
       if (past.length) stats.append(el("span", "pill", past.length + " passé" + (past.length > 1 ? "s" : "")));
       head.append(title, stats);
@@ -512,7 +517,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     });
   }
   function drawChips() {
-    renderChips("accChips", ACCS, selAcc, (v) => { selAcc = selAcc === v ? "" : v; drawChips(); }, true);
+    renderChips("accChips", accsSorted(), selAcc, (v) => { selAcc = selAcc === v ? "" : v; drawChips(); }, true);
     renderChips("lieuChips", LIEUX, selLieu, (v) => { selLieu = v; drawChips(); }, false);
   }
   function openSheet(r) {
