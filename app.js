@@ -7,6 +7,33 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   const ACCS = ["Towfiq", "Manel", "Monim", "Selim", "Walid", "Selma"];
   const PAYS = [["W", "payeW"], ["B", "payeB"], ["S", "payeS"]];
   const PAYS_B = [["S", "payeS"]];
+  // Onglets par accompagnateur : filtre toutes les vues
+  let accFiltre = "", modeRows = [];
+  try { accFiltre = localStorage.getItem("examens_acc") || ""; } catch (e) {}
+  function filtreAcc(list) {
+    if (!accFiltre) return list;
+    if (accFiltre === "__none") return list.filter(r => !(r.accompagnateur || "").trim());
+    return list.filter(r => r.accompagnateur === accFiltre);
+  }
+  function drawAccTabs() {
+    const box = $("accTabs"); if (!box) return;
+    box.replaceChildren();
+    const c = new Map(); ACCS.forEach(a => c.set(a, 0)); let none = 0;
+    modeRows.forEach(r => { const a = (r.accompagnateur || "").trim(); if (a) c.set(a, (c.get(a) || 0) + 1); else none++; });
+    const names = [...c.keys()].sort((a, b) => c.get(b) - c.get(a) || (ACCS.indexOf(a) < 0 ? 99 : ACCS.indexOf(a)) - (ACCS.indexOf(b) < 0 ? 99 : ACCS.indexOf(b)));
+    const mk = (val, label, n, withAv) => {
+      const b = el("button", "acctab"); b.type = "button";
+      if (withAv) b.append(avatar(val));
+      b.append(label); if (n !== null) b.append(el("span", "n", String(n)));
+      b.setAttribute("aria-pressed", String(accFiltre === val));
+      b.onclick = () => { accFiltre = val; try { localStorage.setItem("examens_acc", val); } catch (e) {} rows = filtreAcc(modeRows); foldState.clear(); drawAccTabs(); render(); };
+      box.append(b);
+    };
+    mk("", "Tous", modeRows.length, false);
+    names.forEach(a => mk(a, a, c.get(a), true));
+    if (none) mk("__none", "À définir", none, false);
+    if (accFiltre && accFiltre !== "__none" && !c.has(accFiltre)) { accFiltre = ""; }
+  }
   // Accompagnateurs classés par nombre d'examens (celui qui en fait le plus en premier)
   function accCounts() { const c = new Map(); ACCS.forEach(a => c.set(a, 0)); rows.forEach(r => { const a = (r.accompagnateur || "").trim(); if (a) c.set(a, (c.get(a) || 0) + 1); }); return c; }
   function accsSorted() { const c = accCounts(); return [...c.keys()].sort((a, b) => c.get(b) - c.get(a) || (ACCS.indexOf(a) < 0 ? 99 : ACCS.indexOf(a)) - (ACCS.indexOf(b) < 0 ? 99 : ACCS.indexOf(b))); }
@@ -57,7 +84,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const next = rows.filter(r => r.date >= today).sort((a, b) => a.date.localeCompare(b.date));
     const past = rows.filter(r => r.date < today).sort((a, b) => b.date.localeCompare(a.date));
     const unpaid = rows.filter(r => r.payeS !== true).length; // élèves dont le paiement S n'est pas fait
-    $("summary").textContent = (next.length === 0 ? (mode === "B" ? "Aucune date B à venir" : "Aucun examen à venir") : noun(next.length) + " à venir")
+    const filtreTxt = accFiltre ? (accFiltre === "__none" ? "Sans accompagnateur · " : accFiltre + " · ") : "";
+    $("summary").textContent = filtreTxt + (next.length === 0 ? (mode === "B" ? "Aucune date B à venir" : "Aucun examen à venir") : noun(next.length) + " à venir")
       + (rows.length ? (unpaid ? " · " + unpaid + " élève" + (unpaid > 1 ? "s" : "") + " à payer" : " · tout est payé 🎉") : "")
       + manque(next).map(x => " · " + x).join("");
     const dateIn = (n) => { const t = new Date(); t.setDate(t.getDate() + n); return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0"); };
@@ -566,7 +594,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     $("modeB").setAttribute("aria-selected", String(m === "B"));
     $("appTitle").firstChild.textContent = m === "B" ? "Dates B " : "Dates d'examen ";
     $("fabLbl").textContent = m === "B" ? "Nouvelle date B" : "Nouvel examen";
-    rows = allRows.filter(inMode);
+    rows = allRows.filter(inMode); modeRows = rows; rows = filtreAcc(rows); drawAccTabs();
     if (typeof foldState !== "undefined") foldState.clear();
     render();
   }
@@ -660,7 +688,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       unsub = col.onSnapshot((snap) => {
         loaded = true;
         allRows = snap.docs.map(d => Object.assign({ id: d.id }, d.data())).filter(r => typeof r.eleve === "string" && isDate(r.date));
-        rows = allRows.filter(inMode);
+        rows = allRows.filter(inMode); modeRows = rows; rows = filtreAcc(rows); drawAccTabs();
         render();
       }, (err) => {
         loaded = true;

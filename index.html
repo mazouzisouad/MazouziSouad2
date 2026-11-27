@@ -357,6 +357,16 @@ h1 { font-size: 30px !important }
 .fab { position: static !important; display: flex !important; justify-content: center; width: 100%; margin-top: 8px; box-shadow: none !important }
 .fab[hidden] { display: none !important }
 .wrap { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 32px) !important }
+
+/* Onglets par accompagnateur */
+.acctabs { width: 100%; max-width: 100%; min-width: 0; display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 0 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch }
+.acctabs::-webkit-scrollbar { display: none }
+.acctab { flex: none; display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 14px; font-weight: 700; border: 1.5px solid var(--line); background: var(--card); color: var(--fg); border-radius: 99px; padding: 5px 12px 5px 6px; cursor: pointer }
+.acctab:first-child, .acctab:last-child:not(:has(.avatar)) { padding-left: 12px }
+.acctab .avatar { width: 22px; height: 22px; font-size: 11px }
+.acctab .n { font-size: 12px; font-weight: 800; color: var(--muted) }
+.acctab[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--bg) }
+.acctab[aria-pressed="true"] .n { color: var(--bg); opacity: .75 }
 </style>
 
 </head>
@@ -409,11 +419,12 @@ h1 { font-size: 30px !important }
       <button class="tab" role="tab" id="tabPay" aria-selected="false">Paiements en attente</button>
       <button class="tab" role="tab" id="tabRedo" aria-selected="false">À repasser</button>
     </div>
+    <div class="acctabs" id="accTabs" aria-label="Filtrer par accompagnateur"></div>
   </header>
   <div class="banner" id="banner" role="status" hidden></div>
   <div class="list" id="list"></div>
   <button class="fab" id="fab" type="button" hidden><span aria-hidden="true">＋</span> <span id="fabLbl">Nouvel examen</span></button>
-  <p class="version">Version du 27 nov. · compteur selon S</p>
+  <p class="version">Version du 27 nov. · onglets par accompagnateur</p>
 </div>
 </div>
 
