@@ -295,6 +295,24 @@ body { font-weight: 600 !important; font-size: 17px !important }
 .search-list .mrow.past { opacity: 1 }
 .search-list .mname { display: none }
 .pill.nextp { background: var(--fg) !important; color: var(--bg) !important }
+
+/* Onglet « Par date » (dépliable) */
+.dtools { display: flex; justify-content: flex-end; gap: 16px }
+.datebox { background: var(--card); border: 1.5px solid var(--line); border-radius: 16px; overflow: hidden }
+.datebox.past { opacity: .75 }
+.datebox > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; padding: 14px 16px; position: relative; padding-right: 42px }
+.datebox > summary::-webkit-details-marker { display: none }
+.datebox[open] > summary { border-bottom: 1px solid var(--line) }
+.dleft { display: grid; gap: 2px; min-width: 0 }
+.dleft b { font-family: var(--f-display); font-weight: 400; font-size: 20px }
+.dinfo { color: var(--muted); font-size: 14px }
+.dright { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; align-items: center }
+.dcount { font-weight: 800 }
+.chev { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 18px; transition: transform .2s }
+.datebox[open] .chev { transform: translateY(-50%) rotate(180deg) }
+.datebox .mrows { padding: 0 12px 8px }
+.past-months .datebox { margin-top: 10px }
+@media (max-width: 560px) { .datebox > summary { grid-template-columns: 1fr } .dright { justify-content: flex-start } }
 </style>
 
 </head>
@@ -340,6 +358,7 @@ body { font-weight: 600 !important; font-size: 17px !important }
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" id="tabNext" aria-selected="true">À venir</button>
       <button class="tab" role="tab" id="tabPast" aria-selected="false">Passés</button>
+      <button class="tab" role="tab" id="tabDate" aria-selected="false">Par date</button>
       <button class="tab" role="tab" id="tabMonth" aria-selected="false">Par mois</button>
       <button class="tab" role="tab" id="tabLieu" aria-selected="false">Par lieu</button>
       <button class="tab" role="tab" id="tabAcc" aria-selected="false">Accompagnateurs</button>

@@ -71,6 +71,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     if (view === "lieu") { renderAccs(list, today, true); return; }
     if (view === "pay") { renderPay(list, today); return; }
     if (view === "redo") { renderRedo(list, today); return; }
+    if (view === "date") { renderDates(list, today); return; }
     const items = view === "next" ? next : past;
     if (!items.length) {
       const e = el("div", "empty");
@@ -184,6 +185,57 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
       }
       ul.append(mrowEl(r, today, true, parLieu));
     });
+  }
+
+  // ---------- vue « Par date » : chaque date se déplie / se replie ----------
+  const openDates = new Set(); let datesInit = false;
+  function dateBox(date, items, today) {
+    const d = parse(date);
+    const det = el("details", "datebox" + (date < today ? " past" : ""));
+    det.open = openDates.has(date);
+    det.addEventListener("toggle", () => { if (det.open) openDates.add(date); else openDates.delete(date); });
+    const sum = el("summary");
+    const left = el("div", "dleft");
+    const jour = DAYS[d.getDay()];
+    left.append(el("b", null, jour.charAt(0).toUpperCase() + jour.slice(1) + " " + d.getDate() + " " + MONTHS[d.getMonth()] + " " + d.getFullYear()));
+    const lieux = [...new Set(items.map(x => x.lieu).filter(Boolean))];
+    if (lieux.length) left.append(el("span", "dinfo", "📍 " + lieux.join(", ")));
+    const right = el("div", "dright");
+    right.append(el("span", "dcount", items.length + " élève" + (items.length > 1 ? "s" : "")));
+    if (date >= today) { const n = daysUntil(date); right.append(el("span", "pill nextp", n === 0 ? "Aujourd'hui" : n === 1 ? "Demain" : "J-" + n)); }
+    const unpaid = items.reduce((n, r) => n + paysOf(r).filter(([, f]) => r[f] !== true).length, 0);
+    if (unpaid) right.append(el("span", "pill res-ko", unpaid + " à payer"));
+    const inc = items.filter(incomplet).length;
+    if (inc) right.append(el("span", "pill tbdp", inc + " à compléter"));
+    sum.append(left, right, el("span", "chev", "▾"));
+    det.append(sum);
+    const ul = el("div", "mrows");
+    items.forEach(r => ul.append(mrowEl(r, today, false)));
+    det.append(ul);
+    return det;
+  }
+  function renderDates(list, today) {
+    if (!rows.length) { const e = el("div", "empty"); e.append(el("div", "big", "📅"), el("p", null, "Aucune date pour l'instant.")); list.append(e); return; }
+    const by = new Map();
+    rows.slice().sort((a, b) => a.date.localeCompare(b.date) || (a.eleve || "").localeCompare(b.eleve || "")).forEach(r => { if (!by.has(r.date)) by.set(r.date, []); by.get(r.date).push(r); });
+    const dates = [...by.keys()];
+    const next = dates.filter(d => d >= today), past = dates.filter(d => d < today).reverse();
+    if (!datesInit && next.length) { openDates.add(next[0]); datesInit = true; }
+    const bar = el("div", "dtools");
+    const openAll = el("button", "linkbtn", "Tout déplier"); openAll.type = "button";
+    openAll.onclick = () => { dates.forEach(d => openDates.add(d)); render(); };
+    const closeAll = el("button", "linkbtn", "Tout replier"); closeAll.type = "button";
+    closeAll.onclick = () => { openDates.clear(); render(); };
+    bar.append(openAll, closeAll);
+    list.append(bar);
+    next.forEach(d => list.append(dateBox(d, by.get(d), today)));
+    if (!next.length) list.append(el("p", "hint", "Aucune date à venir."));
+    if (past.length) {
+      const pd = el("details", "past-months");
+      pd.append(el("summary", null, "Dates passées (" + past.length + ")"));
+      past.forEach(d => pd.append(dateBox(d, by.get(d), today)));
+      list.append(pd);
+    }
   }
 
   // ---------- recherche d'un élève (dans les 2 carnets) ----------
@@ -493,13 +545,14 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   $("tabLieu").onclick = () => setView("lieu");
   $("tabPay").onclick = () => setView("pay");
   $("tabRedo").onclick = () => setView("redo");
+  $("tabDate").onclick = () => setView("date");
   $("search").addEventListener("input", () => { $("searchClear").hidden = !$("search").value; render(); });
   $("searchClear").onclick = () => { $("search").value = ""; $("searchClear").hidden = true; render(); $("search").focus(); };
   function setViewClear(v) { if ($("search").value) { $("search").value = ""; $("searchClear").hidden = true; } }
   function setView(v) {
     setViewClear(v);
     view = v;
-    [["tabNext", "next"], ["tabPast", "past"], ["tabMonth", "month"], ["tabAcc", "acc"], ["tabLieu", "lieu"], ["tabPay", "pay"], ["tabRedo", "redo"]].forEach(([id, k]) => $(id).setAttribute("aria-selected", String(v === k)));
+    [["tabNext", "next"], ["tabPast", "past"], ["tabMonth", "month"], ["tabAcc", "acc"], ["tabLieu", "lieu"], ["tabPay", "pay"], ["tabRedo", "redo"], ["tabDate", "date"]].forEach(([id, k]) => $(id).setAttribute("aria-selected", String(v === k)));
     render();
   }
 
