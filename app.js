@@ -15,7 +15,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   const inMode = (r) => mode === "B" ? r.type === "B" : r.type !== "B";
   const nom1 = () => mode === "B" ? "date B" : "examen";
   const noun = (n) => n + " " + (mode === "B" ? (n > 1 ? "dates B" : "date B") : (n > 1 ? "examens" : "examen"));
-  const LIEUX = ["Gennevilliers", "Noisy", "Bobigny"];
+  const LIEUX = ["Gennevilliers", "Noisy", "Bobigny", "Créteil"];
   const COLORS = ["#ef4444", "#f59e0b", "#10b981", "#0ea5e9", "#8b5cf6", "#ec4899", "#14b8a6", "#64748b"];
   const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
   const DAYS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
