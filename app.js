@@ -567,6 +567,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     $("appTitle").firstChild.textContent = m === "B" ? "Dates B " : "Dates d'examen ";
     $("fabLbl").textContent = m === "B" ? "Nouvelle date B" : "Nouvel examen";
     rows = allRows.filter(inMode);
+    if (typeof foldState !== "undefined") foldState.clear();
     render();
   }
   $("modeExam").onclick = () => setMode("exam");
@@ -581,6 +582,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   function setViewClear(v) { if ($("search").value) { $("search").value = ""; $("searchClear").hidden = true; } }
   function setView(v) {
     setViewClear(v);
+    foldState.clear(); // menus dépliants refermés à chaque changement d'onglet
     view = v;
     [["tabNext", "next"], ["tabPast", "past"], ["tabMonth", "month"], ["tabAcc", "acc"], ["tabLieu", "lieu"], ["tabPay", "pay"], ["tabRedo", "redo"], ["tabDate", "date"]].forEach(([id, k]) => $(id).setAttribute("aria-selected", String(v === k)));
     render();
