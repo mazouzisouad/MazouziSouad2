@@ -197,7 +197,7 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
   const fkey = (k) => mode + "|" + view + "|" + k;
   function track(det, k, def) {
     const key = fkey(k); curKeys.push(key);
-    det.open = foldState.has(key) ? foldState.get(key) : def;
+    det.open = foldState.has(key) ? foldState.get(key) : false; // fermé par défaut
     det.addEventListener("toggle", () => foldState.set(key, det.open));
     return det;
   }
