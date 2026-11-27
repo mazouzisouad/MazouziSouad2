@@ -367,6 +367,14 @@ h1 { font-size: 30px !important }
 .acctab .n { font-size: 12px; font-weight: 800; color: var(--muted) }
 .acctab[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--bg) }
 .acctab[aria-pressed="true"] .n { color: var(--bg); opacity: .75 }
+
+/* Dates mises en évidence : étiquette noire */
+.dleft b { display: inline-block; background: var(--fg); color: var(--bg); border-radius: 10px; padding: 4px 12px; font-size: 19px !important; width: fit-content }
+.card .day { background: var(--fg) !important; border-color: var(--fg) !important; color: var(--bg) !important }
+.card .day .m { color: var(--bg) !important }
+.mday { background: var(--fg); color: var(--bg); border-radius: 10px; padding: 4px 0 }
+.mday b { color: var(--bg) !important } .mday span { color: var(--bg) !important }
+.card .day .m, .mday span { opacity: .8 }
 </style>
 
 </head>
@@ -424,7 +432,7 @@ h1 { font-size: 30px !important }
   <div class="banner" id="banner" role="status" hidden></div>
   <div class="list" id="list"></div>
   <button class="fab" id="fab" type="button" hidden><span aria-hidden="true">＋</span> <span id="fabLbl">Nouvel examen</span></button>
-  <p class="version">Version du 27 nov. · onglets par accompagnateur</p>
+  <p class="version">Version du 27 nov. · dates en évidence</p>
 </div>
 </div>
 

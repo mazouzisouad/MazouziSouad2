@@ -1,5 +1,5 @@
 // Service worker : l'appli s'ouvre même sans réseau (installée sur le téléphone).
-const CACHE = 'examens-v35';
+const CACHE = 'examens-v36';
 const FILES = ['./', 'index.html', 'app.js', 'icon.svg', 'manifest.webmanifest', 'config.js',
   'vendor/firebase/firebase-app-compat.js', 'vendor/firebase/firebase-auth-compat.js', 'vendor/firebase/firebase-firestore-compat.js'];
 
