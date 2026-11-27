@@ -352,6 +352,11 @@ h1 { font-size: 30px !important }
 .mname { font-size: 15px !important; font-weight: 700 !important }
 .pays-title, .field > span, .totals-lbl { font-size: 10px !important; letter-spacing: .1em !important }
 .card .pays-title { margin-bottom: -4px }
+
+/* Bouton « Nouvel examen » en bas de la page (défile avec la page) */
+.fab { position: static !important; display: flex !important; justify-content: center; width: 100%; margin-top: 8px; box-shadow: none !important }
+.fab[hidden] { display: none !important }
+.wrap { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 32px) !important }
 </style>
 
 </head>
@@ -407,11 +412,11 @@ h1 { font-size: 30px !important }
   </header>
   <div class="banner" id="banner" role="status" hidden></div>
   <div class="list" id="list"></div>
-  <p class="version">Version du 27 nov. · menus fermés au départ</p>
+  <button class="fab" id="fab" type="button" hidden><span aria-hidden="true">＋</span> <span id="fabLbl">Nouvel examen</span></button>
+  <p class="version">Version du 27 nov. · bouton en bas de page</p>
 </div>
 </div>
 
-<button class="fab" id="fab" type="button" hidden><span aria-hidden="true">＋</span> <span id="fabLbl">Nouvel examen</span></button>
 
 <div class="overlay" id="overlay" hidden>
   <form class="sheet" id="sheet" autocomplete="off" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
