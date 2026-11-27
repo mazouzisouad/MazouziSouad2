@@ -56,9 +56,9 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const today = todayStr();
     const next = rows.filter(r => r.date >= today).sort((a, b) => a.date.localeCompare(b.date));
     const past = rows.filter(r => r.date < today).sort((a, b) => b.date.localeCompare(a.date));
-    const unpaid = rows.reduce((n, r) => n + paysOf(r).filter(([, f]) => r[f] !== true).length, 0);
+    const unpaid = rows.filter(r => paysOf(r).some(([, f]) => r[f] !== true)).length; // élèves qui n'ont pas tout payé
     $("summary").textContent = (next.length === 0 ? (mode === "B" ? "Aucune date B à venir" : "Aucun examen à venir") : noun(next.length) + " à venir")
-      + (rows.length ? (unpaid ? " · " + unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : " · tout est payé 🎉") : "")
+      + (rows.length ? (unpaid ? " · " + unpaid + " élève" + (unpaid > 1 ? "s" : "") + " à payer" : " · tout est payé 🎉") : "")
       + manque(next).map(x => " · " + x).join("");
     const dateIn = (n) => { const t = new Date(); t.setDate(t.getDate() + n); return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0"); };
     const bientot = rows.filter(r => r.date >= today && r.date <= dateIn(2) && incomplet(r));
@@ -123,14 +123,14 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const head = el("div", "month-head");
     const title = el("h2", null, MONTHS_FULL[m - 1] + " " + y);
     if (isCurrent) title.append(el("span", "now", "Ce mois-ci"));
-    const unpaid = items.reduce((n, r) => n + paysOf(r).filter(([, f]) => r[f] !== true).length, 0);
+    const unpaid = items.filter(r => paysOf(r).some(([, f]) => r[f] !== true)).length; // élèves qui n'ont pas tout payé
     const stats = el("div", "month-stats");
     stats.append(el("span", "pill", noun(items.length)));
     manque(items).forEach(x => stats.append(el("span", "pill tbdp", x)));
     const nR = items.filter(x => x.resultat === "reussi").length, nE = items.filter(x => x.resultat === "echec").length;
     if (nR) stats.append(el("span", "pill res-ok", nR + " réussi" + (nR > 1 ? "s" : "")));
     if (nE) stats.append(el("span", "pill res-ko", nE + " échec" + (nE > 1 ? "s" : "")));
-    stats.append(el("span", "pill " + (unpaid ? "wait" : "ok"), unpaid ? unpaid + " paiement" + (unpaid > 1 ? "s" : "") + " en attente" : "Tout payé ✓"));
+    stats.append(el("span", "pill " + (unpaid ? "wait" : "ok"), unpaid ? unpaid + " élève" + (unpaid > 1 ? "s" : "") + " à payer" : "Tout payé ✓"));
     head.append(title, stats);
     box.append(head);
     box.append(accTotals(items));
@@ -238,8 +238,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
     const right = el("div", "dright");
     right.append(el("span", "dcount", items.length + " élève" + (items.length > 1 ? "s" : "")));
     if (date >= today) { const n = daysUntil(date); right.append(el("span", "pill nextp", n === 0 ? "Aujourd'hui" : n === 1 ? "Demain" : "J-" + n)); }
-    const unpaid = items.reduce((n, r) => n + paysOf(r).filter(([, f]) => r[f] !== true).length, 0);
-    if (unpaid) right.append(el("span", "pill res-ko", unpaid + " à payer"));
+    const unpaid = items.filter(r => paysOf(r).some(([, f]) => r[f] !== true)).length; // élèves qui n'ont pas tout payé
+    if (unpaid) right.append(el("span", "pill res-ko", unpaid + " élève" + (unpaid > 1 ? "s" : "") + " à payer"));
     const inc = items.filter(incomplet).length;
     if (inc) right.append(el("span", "pill tbdp", inc + " à compléter"));
     sum.append(left, right, el("span", "chev", "▾"));
